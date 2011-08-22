@@ -21,28 +21,21 @@ class LoginHandler(webapp.RequestHandler):
 			response = "Yes"
 		else:
 			response = users.create_login_url("/")
-		
+
 		self.response.out.write(response)
-		
+
 class ConnectHandler(webapp.RequestHandler):
 	def get(self):
 		user = users.get_current_user()
-		
+
 		token = channel.create_channel(user.user_id())
-		response = "{\"token\":\""+token+"\",\"games\":["
-		q = Game.all()
-		games = q.fetch(10)
-		
-		for game in games:
-			response = response + game.name + ","
-		response = response + "]}"
-		self.response.out.write(response)
+		self.response.out.write(token)
 
 class CreateGameHandler(webapp.RequestHandler):
 	def get(self):
 		user = users.get_current_user()
 		q = Game.all()
-		
+
 		name = self.request.get("name")
 		q.filter("name", name)
 		games = q.fetch(1)
@@ -56,16 +49,32 @@ class GetGameListHandler(webapp.RequestHandler):
 	def get(self):
 		q = Game.all()
 		games = q.fetch(10);
-		
+
 		response = "{\"game\":[\"\""
-		
+
 		for game in games:
-			response = response + ",\"" + game.name +"\"" 
+			response = response + ",\"" + game.name +"\""
 		response = response + "]}"
 		self.response.out.write(response)
 
+class JoinGameHandler(webapp.RequestHandler):
+	def get(self):
+		q = Game.all()
+		name = self.request.get("name")
+		q.filter("name", name)
+
+		game = q.fetch(1);
+		if game:
+			pass
+
+
 def main():
-	application = webapp.WSGIApplication([('/login', LoginHandler), ('/connect', ConnectHandler), ('/creategame', CreateGameHandler), ('/getgamelist', GetGameListHandler)],
+	application = webapp.WSGIApplication([
+										('/login', LoginHandler),
+										('/connect', ConnectHandler),
+										('/creategame', CreateGameHandler),
+										('/getgamelist', GetGameListHandler),
+										('/joingame', JoinGameHandler)],
 										 debug=True)
 	util.run_wsgi_app(application)
 
