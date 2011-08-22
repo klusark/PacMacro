@@ -1,0 +1,17 @@
+application: pacmacro
+version: 1
+runtime: python
+api_version: 1
+
+inbound_services:
+- channel_presence
+
+handlers:
+- url: /scripts
+  static_dir: scripts
+- url: /
+  static_files: index.html
+  upload: index.html
+- url: .*
+  script: main.py
+
