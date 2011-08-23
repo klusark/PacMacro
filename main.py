@@ -131,22 +131,20 @@ class LeaveGameHandler(webapp.RequestHandler):
 class GameInfoHandler(webapp.RequestHandler):
 	def get(self):
 		user = users.get_current_user()
-		q = User.all()
-		q.filter("user", user)
-		result = q.fetch(1)
-		response = '{"type":"full",'
-		if result:
-			response += '"creator":'
-			if result[0].game.owner == user:
-				response += "true"
-			else:
-				response += "false"
-			response += ',"players":[{}'
-			for player in result[0].game.players:
-				u = GetUser(player)
-				response += ',{"name":"%s","role":"%s"}' % (player.nickname(), u.role)
-			response += "]"
-		response += "}"
+		u = GetUser(user)
+		if not u or not u.game:
+			return
+		response = '{"type":"full","creator":'
+
+		if u.game.owner == user:
+			response += "true"
+		else:
+			response += "false"
+		response += ',"players":[{}'
+		for player in u.game.players:
+			u = GetUser(player)
+			response += ',{"name":"%s","role":"%s"}' % (player.nickname(), u.role)
+		response += "]}"
 		self.response.out.write(response)
 
 class UpdateSettingsHandler(webapp.RequestHandler):
