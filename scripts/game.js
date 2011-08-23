@@ -9,7 +9,8 @@ function Game() {
 	<option>Pinky</option>\
 	<option>Clide</option>\
 	</select>\
-	<input type='submit' value='Leave Game' onClick='game.Leave();' />";
+	<input type='submit' value='Leave Game' onClick='game.Leave();' />\
+	<input type='submit' value='Start Game' onClick='game.Leave();' />";
 	var creator;
 	var players;
 
@@ -67,6 +68,9 @@ function Game() {
 					break;
 				}
 			}
+		} else if (o.type == "gameend") {
+			menu.Activate();
+			return;
 		}
 		this.UpdatePlayers();
 	};

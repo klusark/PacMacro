@@ -35,6 +35,7 @@ class LoginHandler(webapp.RequestHandler):
 			if not u:
 				u = User(user=user, role="None")
 				u.put()
+			#TODO: Check if the game is actually valid as it will crash if it is not.
 			if u and u.game:
 				response += "true"
 			else:
@@ -112,21 +113,23 @@ class JoinGameHandler(webapp.RequestHandler):
 class LeaveGameHandler(webapp.RequestHandler):
 	def get(self):
 		user = users.get_current_user()
-		q = User.all()
-		q.filter("user", user)
-		result = q.fetch(1)
-		if result:
-			u = result[0]
-			if user == u.game.owner:
-				#for 
-				u.game.delete()
-			elif user in u.game.players:
-				u.game.players.remove(user)
-				for player in u.game.players:
-					channel.send_message(player.user_id(), '{"type":"playerleave","player":"%s"}' % user.nickname())
-				u.game.put()
-			u.game = None
-			u.put()
+		u = GetUser(user)
+		if not u:
+			return
+		if user == u.game.owner:
+			for player in u.game.players:
+				p = GetUser(player)
+				p.game = None
+				p.put()
+				channel.send_message(player.user_id(), '{"type":"gameend"}')
+			u.game.delete()
+		elif user in u.game.players:
+			u.game.players.remove(user)
+			for player in u.game.players:
+				channel.send_message(player.user_id(), '{"type":"playerleave","player":"%s"}' % user.nickname())
+			u.game.put()
+		u.game = None
+		u.put()
 
 class GameInfoHandler(webapp.RequestHandler):
 	def get(self):
