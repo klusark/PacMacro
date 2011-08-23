@@ -11,19 +11,31 @@ class User(db.Model):
 	user = db.UserProperty()
 	game = db.ReferenceProperty(Game)
 
+def GetUser(user):
+	q = User.all()
+	q.filter("user", user)
+	result = q.fetch(1)
+	if result:
+		return result[0]
+	else:
+		return None
+
 class LoginHandler(webapp.RequestHandler):
 	def get(self):
 		user = users.get_current_user()
 
 		response = "{\"loggedin\":"
 		if user:
-			response += "true,\"ingame\":false"
-			q = User.all()
-			q.filter("user", user)
-			userss = q.fetch(1)
-			if not userss:
+			response += "true,\"ingame\":"
+			u = GetUser(user)
+			if not u:
 				u = User(user=user)
 				u.put()
+			if u and u.game:
+				response += "true"
+			else:
+				response += "false"
+
 		else:
 			response += "false,\"url\":\""
 			response += users.create_login_url("/")
@@ -50,6 +62,7 @@ class CreateGameHandler(webapp.RequestHandler):
 			self.response.out.write("Game already exists with that name")
 		else:
 			game = Game(name=name, owner=user)
+			game.players.append(user)
 			game.put()
 			q = User.all()
 			q.filter("user", user)
@@ -66,19 +79,68 @@ class GetGameListHandler(webapp.RequestHandler):
 		response = "{\"game\":[\"\""
 
 		for game in games:
-			response = response + ",\"" + game.name + "\""
+			response += ",\"" + game.name + "\""
 		response = response + "]}"
 		self.response.out.write(response)
 
 class JoinGameHandler(webapp.RequestHandler):
 	def get(self):
+		user = users.get_current_user()
 		q = Game.all()
 		name = self.request.get("name")
 		q.filter("name", name)
 
 		game = q.fetch(1);
 		if game:
-			pass
+			g = game[0]
+			if len(g.players) < 4:
+				for player in g.players:
+					channel.send_message(player.user_id(), "{\"type\":\"playerjoin\",\"player\":\"" + user.nickname() + "\"}")
+				g.players.append(user)
+				g.put()
+				u = GetUser(user)
+				if u:
+					u.game = g
+					u.put()
+
+class LeaveGameHandler(webapp.RequestHandler):
+	def get(self):
+		user = users.get_current_user()
+		q = User.all()
+		q.filter("user", user)
+		result = q.fetch(1)
+		if result:
+			u = result[0]
+			if user == u.game.owner:
+				#for 
+				u.game.delete()
+			elif user in u.game.players:
+				u.game.players.remove(user)
+				for player in u.game.players:
+					channel.send_message(player.user_id(), "{\"type\":\"playerleave\",\"player\":\"" + user.nickname() + "\"}")
+				u.game.put()
+			u.game = None
+			u.put()
+
+class GameInfoHandler(webapp.RequestHandler):
+	def get(self):
+		user = users.get_current_user()
+		q = User.all()
+		q.filter("user", user)
+		result = q.fetch(1)
+		response = "{\"type\":\"full\","
+		if result:
+			response += "\"creator\":"
+			if result[0].game.owner == user:
+				response += "true"
+			else:
+				response += "false"
+			response += ",\"players\":[\"\""
+			for player in result[0].game.players:
+				response += ",\"" + player.nickname() + "\""
+			response += "]"
+		response += "}"
+		self.response.out.write(response)
 
 
 def main():
@@ -87,7 +149,9 @@ def main():
 										('/connect', ConnectHandler),
 										('/creategame', CreateGameHandler),
 										('/getgamelist', GetGameListHandler),
-										('/joingame', JoinGameHandler)],
+										('/joingame', JoinGameHandler),
+										('/getgameinfo', GameInfoHandler),
+										('/leavegame', LeaveGameHandler)],
 										 debug=True)
 	util.run_wsgi_app(application)
 

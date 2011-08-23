@@ -24,19 +24,16 @@ function Channel() {
 	this.onOpened = function() {
 		if (callback.onOpened)
 			callback.onOpened()
-		//alert("onOpened");
 	};
 
-	this.onMessage = function() {
+	this.onMessage = function(data) {
 		if (callback.onMessage)
-			callback.onMessage()
-		alert("onMessage");
+			callback.onMessage(data)
 	};
 
 	this.onError = function() {
 		if (callback.onError)
 			callback.onError()
-		alert("onError");
 	};
 
 	this.onClose = function() {

@@ -14,7 +14,7 @@ function CreateGame() {
 	this.CreateGame = function() {
 		var name = document.getElementById("name").value;
 		jx.load("creategame?name="+name, function(data) {});
-		game.Activate(true);
+		game.Activate();
 	}
 }
 
