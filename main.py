@@ -96,7 +96,7 @@ class JoinGameHandler(webapp.RequestHandler):
 		game = q.fetch(1);
 		if game and game[0]:
 			g = game[0]
-			if len(g.players) < 4:
+			if len(g.players) < 5:
 				u = GetUser(user)
 				for player in g.players:
 					channel.send_message(player.user_id(), '{"type":"playerjoin","player":{"name":"%s", "role":"%s"}}' % (user.nickname(), u.role))

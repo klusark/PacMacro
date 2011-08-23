@@ -21,6 +21,10 @@ function Channel() {
 		callback = o;
 	};
 
+	this.Disconnect = function() {
+		c.close();
+	}
+
 	this.onOpened = function() {
 		if (callback.onOpened)
 			callback.onOpened()

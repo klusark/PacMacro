@@ -10,7 +10,7 @@ function Game() {
 	<option>Clide</option>\
 	</select>\
 	<input type='submit' value='Leave Game' onClick='game.Leave();' />\
-	<input type='submit' value='Start Game' onClick='game.Leave();' />";
+	<input type='submit' value='Start Game' id='startbutton' onClick='game.Leave();' />";
 	var creator;
 	var players;
 
@@ -26,8 +26,13 @@ function Game() {
 
 	this.Leave = function() {
 		jx.load("leavegame", function(data) {
-			menu.Activate();
+			game.FinishLeave();
 		});
+	};
+
+	this.FinishLeave = function() {
+		channel.Disconnect
+		menu.Activate();
 	}
 
 	this.GetGameInfo = function() {
@@ -36,13 +41,24 @@ function Game() {
 		});
 	};
 
-	this.UpdatePlayers = function() {
+	this.Update = function() {
 		var numPlayers = players.length;
 		var table = "<tr><td>Name</td><td>Desired Role</td></tr>";
 		for (var i = 1; i < numPlayers; i += 1) {
 			table += "<tr><td>"+players[i].name+"</td><td>"+players[i].role+"</td></tr>";
 		}
 		document.getElementById("players").innerHTML = table;
+
+		document.getElementById("startbutton").disabled = !this.AllowedToStart();
+	};
+
+	this.AllowedToStart = function() {
+		//TODO: clean this up.
+		if (players.length != 6)
+			return false;
+		if (!creator)
+			return false;
+		return true;
 	};
 
 	this.UpdateGame = function(data) {
@@ -69,10 +85,10 @@ function Game() {
 				}
 			}
 		} else if (o.type == "gameend") {
-			menu.Activate();
+			this.FinishLeave();
 			return;
 		}
-		this.UpdatePlayers();
+		this.Update();
 	};
 
 	this.SelectRole = function(role) {
