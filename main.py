@@ -1,27 +1,34 @@
-from google.appengine.ext import webapp
+from google.appengine.api import channel, users
+from google.appengine.ext import db, webapp
 from google.appengine.ext.webapp import util
-from google.appengine.ext import db
-from google.appengine.api import channel
-from google.appengine.api import users
-
-class User(db.Model):
-	user = db.UserProperty()
-	game = db.Key()
-
 
 class Game(db.Model):
 	name = db.StringProperty(required=True)
 	owner = db.UserProperty()
+	players = db.ListProperty(users.User);
 
+class User(db.Model):
+	user = db.UserProperty()
+	game = db.ReferenceProperty(Game)
 
 class LoginHandler(webapp.RequestHandler):
 	def get(self):
 		user = users.get_current_user()
-		if user:
-			response = "Yes"
-		else:
-			response = users.create_login_url("/")
 
+		response = "{\"loggedin\":"
+		if user:
+			response += "true,\"ingame\":false"
+			q = User.all()
+			q.filter("user", user)
+			userss = q.fetch(1)
+			if not userss:
+				u = User(user=user)
+				u.put()
+		else:
+			response += "false,\"url\":\""
+			response += users.create_login_url("/")
+			response += "\""
+		response += "}"
 		self.response.out.write(response)
 
 class ConnectHandler(webapp.RequestHandler):
@@ -44,6 +51,12 @@ class CreateGameHandler(webapp.RequestHandler):
 		else:
 			game = Game(name=name, owner=user)
 			game.put()
+			q = User.all()
+			q.filter("user", user)
+			u = q.fetch(1)
+			if u:
+				u[0].game = game
+				u[0].put()
 
 class GetGameListHandler(webapp.RequestHandler):
 	def get(self):
@@ -53,7 +66,7 @@ class GetGameListHandler(webapp.RequestHandler):
 		response = "{\"game\":[\"\""
 
 		for game in games:
-			response = response + ",\"" + game.name +"\""
+			response = response + ",\"" + game.name + "\""
 		response = response + "]}"
 		self.response.out.write(response)
 
@@ -81,3 +94,5 @@ def main():
 
 if __name__ == '__main__':
 	main()
+
+
