@@ -28,8 +28,11 @@ function GamesMenu() {
 
 	this.JoinGame = function(name) {
 		jx.load("joingame?name="+name, function(data) {
-
-			game.Activate(false);
+			var o = JSON.parse(data);
+			if (!o.error)
+				game.Activate(false);
+			else
+				menu.Refresh();
 		});
 	};
 }

@@ -10,6 +10,7 @@ class Game(db.Model):
 class User(db.Model):
 	user = db.UserProperty()
 	game = db.ReferenceProperty(Game)
+	role = db.StringProperty()
 
 def GetUser(user):
 	q = User.all()
@@ -20,16 +21,19 @@ def GetUser(user):
 	else:
 		return None
 
+def IsRoleGood(role):
+	return True
+
 class LoginHandler(webapp.RequestHandler):
 	def get(self):
 		user = users.get_current_user()
 
-		response = "{\"loggedin\":"
+		response = '{"loggedin":'
 		if user:
-			response += "true,\"ingame\":"
+			response += 'true,"ingame":'
 			u = GetUser(user)
 			if not u:
-				u = User(user=user)
+				u = User(user=user, role="None")
 				u.put()
 			if u and u.game:
 				response += "true"
@@ -37,9 +41,7 @@ class LoginHandler(webapp.RequestHandler):
 				response += "false"
 
 		else:
-			response += "false,\"url\":\""
-			response += users.create_login_url("/")
-			response += "\""
+			response += 'false,"url":"%s"' % users.create_login_url("/")
 		response += "}"
 		self.response.out.write(response)
 
@@ -76,10 +78,10 @@ class GetGameListHandler(webapp.RequestHandler):
 		q = Game.all()
 		games = q.fetch(10);
 
-		response = "{\"game\":[\"\""
+		response = '{"game":[""'
 
 		for game in games:
-			response += ",\"" + game.name + "\""
+			response += ',"%s"' % game.name
 		response = response + "]}"
 		self.response.out.write(response)
 
@@ -89,19 +91,23 @@ class JoinGameHandler(webapp.RequestHandler):
 		q = Game.all()
 		name = self.request.get("name")
 		q.filter("name", name)
-
+		response = "{}"
 		game = q.fetch(1);
-		if game:
+		if game and game[0]:
 			g = game[0]
 			if len(g.players) < 4:
+				u = GetUser(user)
 				for player in g.players:
-					channel.send_message(player.user_id(), "{\"type\":\"playerjoin\",\"player\":\"" + user.nickname() + "\"}")
+					channel.send_message(player.user_id(), '{"type":"playerjoin","player":{"name":"%s", "role":"%s"}}' % (user.nickname(), u.role))
 				g.players.append(user)
 				g.put()
-				u = GetUser(user)
+
 				if u:
 					u.game = g
 					u.put()
+		else:
+			response = '{"error":"game full"}'
+		self.response.out.write(response)
 
 class LeaveGameHandler(webapp.RequestHandler):
 	def get(self):
@@ -117,7 +123,7 @@ class LeaveGameHandler(webapp.RequestHandler):
 			elif user in u.game.players:
 				u.game.players.remove(user)
 				for player in u.game.players:
-					channel.send_message(player.user_id(), "{\"type\":\"playerleave\",\"player\":\"" + user.nickname() + "\"}")
+					channel.send_message(player.user_id(), '{"type":"playerleave","player":"%s"}' % user.nickname())
 				u.game.put()
 			u.game = None
 			u.put()
@@ -128,19 +134,36 @@ class GameInfoHandler(webapp.RequestHandler):
 		q = User.all()
 		q.filter("user", user)
 		result = q.fetch(1)
-		response = "{\"type\":\"full\","
+		response = '{"type":"full",'
 		if result:
-			response += "\"creator\":"
+			response += '"creator":'
 			if result[0].game.owner == user:
 				response += "true"
 			else:
 				response += "false"
-			response += ",\"players\":[\"\""
+			response += ',"players":[{}'
 			for player in result[0].game.players:
-				response += ",\"" + player.nickname() + "\""
+				u = GetUser(player)
+				response += ',{"name":"%s","role":"%s"}' % (player.nickname(), u.role)
 			response += "]"
 		response += "}"
 		self.response.out.write(response)
+
+class UpdateSettingsHandler(webapp.RequestHandler):
+	def get(self):
+		user = users.get_current_user()
+		role = self.request.get("role")
+		if not IsRoleGood(role):
+			return
+		u = GetUser(user)
+		if not u:
+			return
+
+		for player in u.game.players:
+			channel.send_message(player.user_id(), '{"type":"player","player":{"name":"%s", "role":"%s"}}' % (user.nickname(), role))
+
+		u.role = role;
+		u.put()
 
 
 def main():
@@ -151,7 +174,8 @@ def main():
 										('/getgamelist', GetGameListHandler),
 										('/joingame', JoinGameHandler),
 										('/getgameinfo', GameInfoHandler),
-										('/leavegame', LeaveGameHandler)],
+										('/leavegame', LeaveGameHandler),
+										('/updatesettings', UpdateSettingsHandler)],
 										 debug=True)
 	util.run_wsgi_app(application)
 
