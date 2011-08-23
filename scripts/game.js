@@ -1,7 +1,7 @@
 function Game() {
 	var initialHTML = "<table id='players'>\
 	</table>\
-	<select onChange='game.SelectRole(this.options[this.selectedIndex].value);'>\
+	<select id='roles' onChange='game.SelectRole(this.options[this.selectedIndex].value);'>\
 	<option>None</option>\
 	<option>Pacman</option>\
 	<option>Inky</option>\
@@ -10,9 +10,10 @@ function Game() {
 	<option>Clide</option>\
 	</select>\
 	<input type='submit' value='Leave Game' onClick='game.Leave();' />\
-	<input type='submit' value='Start Game' id='startbutton' onClick='game.Leave();' />";
+	<input type='submit' value='Start Game' id='startbutton' onClick='game.StartGame();' />";
 	var creator;
 	var players;
+	var localPlayerName;
 
 	this.Activate = function() {
 		this.GetGameInfo();
@@ -44,18 +45,39 @@ function Game() {
 	this.Update = function() {
 		var numPlayers = players.length;
 		var table = "<tr><td>Name</td><td>Desired Role</td></tr>";
+		var role = "None";
 		for (var i = 1; i < numPlayers; i += 1) {
 			table += "<tr><td>"+players[i].name+"</td><td>"+players[i].role+"</td></tr>";
+			if (players[i].name == localPlayerName) {
+				role = players[i].role;
+			}
 		}
 		document.getElementById("players").innerHTML = table;
 
 		document.getElementById("startbutton").disabled = !this.AllowedToStart();
+
+		var roles = document.getElementById("roles");
+		for (var i = 0; i < 6; i += 1) {
+			if (roles.options[i].value == role) {
+				roles.selectedIndex = i;
+				break;
+			}
+		}
 	};
 
 	this.AllowedToStart = function() {
 		//TODO: clean this up.
-		if (players.length != 6)
+		var numPlayers = players.length;
+		if (numPlayers != 6)
 			return false;
+		players[0].role = "None";
+		for (var x = 0; x < numPlayers; x += 1) {
+			for (var y = 1; y < numPlayers; y += 1) {
+				if ((x != y && players[x].role == players[y].role)) {
+					return false;
+				}
+			}
+		}
 		if (!creator)
 			return false;
 		return true;
@@ -66,6 +88,7 @@ function Game() {
 		if (o.type == "full") {
 			creator = o.creator;
 			players = o.players;
+			localPlayerName = o.localplayer;
 		} else if (o.type == "playerjoin") {
 			players.push(o.player);
 		} else if (o.type == "playerleave") {

@@ -137,7 +137,7 @@ class GameInfoHandler(webapp.RequestHandler):
 		u = GetUser(user)
 		if not u or not u.game:
 			return
-		response = '{"type":"full","creator":'
+		response = '{"type":"full","localplayer":"%s","creator":' % user.nickname()
 
 		if u.game.owner == user:
 			response += "true"
