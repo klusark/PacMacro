@@ -7,6 +7,7 @@ class Game(db.Model):
 	owner = db.UserProperty()
 	players = db.ListProperty(users.User)
 	started = db.BooleanProperty()
+	eaten = db.ListProperty(int)
 
 class User(db.Model):
 	user = db.UserProperty()
@@ -184,7 +185,19 @@ class StartGameHandler(webapp.RequestHandler):
 		for player in u.game.players:
 			channel.send_message(player.user_id(), '{"type":"startgame"}')
 
-
+class MoveToHandler(webapp.RequestHandler):
+	def get(self):
+		user = users.get_current_user()
+		u = GetUser(user)
+		if not u:
+			return
+		poss = self.request.get("pos")
+		pos = int(poss)
+		if not pos in u.game.eaten:
+			u.game.eaten.append(pos)
+			u.game.put()
+			for player in u.game.players:
+				channel.send_message(player.user_id(), '{"type":"eat","pos":"%s"}' % poss)
 
 def main():
 	application = webapp.WSGIApplication([
@@ -196,7 +209,8 @@ def main():
 										('/getgameinfo', GameInfoHandler),
 										('/leavegame', LeaveGameHandler),
 										('/updatesettings', UpdateSettingsHandler),
-										('/startgame', StartGameHandler)],
+										('/startgame', StartGameHandler),
+										('/moveto', MoveToHandler)],
 										 debug=True)
 	util.run_wsgi_app(application)
 
