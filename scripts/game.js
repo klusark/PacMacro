@@ -110,14 +110,22 @@ function Game() {
 		} else if (o.type == "gameend") {
 			this.FinishLeave();
 			return;
+		} else if (o.type == "startgame") {
+			ingame.Activate();
+			return;
 		}
 		this.Update();
 	};
 
-	this.SelectRole = function(role) {
-		jx.load("updatesettings?role="+role, function(data) {
-			//game.UpdateGame(data);
+	this.StartGame = function() {
+		jx.load("startgame", function(data) {
+			// Check to make sure that the game is allowed to be started.
 		});
 	}
+
+	this.SelectRole = function(role) {
+		jx.load("updatesettings?role="+role, function(data) {
+		});
+	};
 }
 var game = new Game();

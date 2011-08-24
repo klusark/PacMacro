@@ -166,6 +166,17 @@ class UpdateSettingsHandler(webapp.RequestHandler):
 		u.role = role;
 		u.put()
 
+class StartGameHandler(webapp.RequestHandler):
+	def get(self):
+		user = users.get_current_user()
+		u = GetUser(user)
+		if not u:
+			return
+
+		#TODO: make sure the game is actually valid to start.
+
+		for player in u.game.players:
+			channel.send_message(player.user_id(), '{"type":"startgame"}')
 
 def main():
 	application = webapp.WSGIApplication([
@@ -176,7 +187,8 @@ def main():
 										('/joingame', JoinGameHandler),
 										('/getgameinfo', GameInfoHandler),
 										('/leavegame', LeaveGameHandler),
-										('/updatesettings', UpdateSettingsHandler)],
+										('/updatesettings', UpdateSettingsHandler),
+										('/startgame', StartGameHandler)],
 										 debug=True)
 	util.run_wsgi_app(application)
 
