@@ -5,7 +5,8 @@ from google.appengine.ext.webapp import util
 class Game(db.Model):
 	name = db.StringProperty(required=True)
 	owner = db.UserProperty()
-	players = db.ListProperty(users.User);
+	players = db.ListProperty(users.User)
+	started = db.BooleanProperty()
 
 class User(db.Model):
 	user = db.UserProperty()
@@ -37,7 +38,11 @@ class LoginHandler(webapp.RequestHandler):
 				u.put()
 			#TODO: Check if the game is actually valid as it will crash if it is not.
 			if u and u.game:
-				response += "true"
+				response += 'true,"started":'
+				if u.game.started:
+					response += "true"
+				else:
+					response += "false"
 			else:
 				response += "false"
 
@@ -174,9 +179,12 @@ class StartGameHandler(webapp.RequestHandler):
 			return
 
 		#TODO: make sure the game is actually valid to start.
-
+		u.game.started = True
+		u.game.put()
 		for player in u.game.players:
 			channel.send_message(player.user_id(), '{"type":"startgame"}')
+
+
 
 def main():
 	application = webapp.WSGIApplication([

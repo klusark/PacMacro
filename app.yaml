@@ -9,6 +9,8 @@ inbound_services:
 handlers:
 - url: /scripts
   static_dir: scripts
+- url: /images
+  static_dir: images
 - url: /
   static_files: index.html
   upload: index.html

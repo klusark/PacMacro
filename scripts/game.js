@@ -68,7 +68,8 @@ function Game() {
 	this.AllowedToStart = function() {
 		//TODO: clean this up.
 		var numPlayers = players.length;
-		if (numPlayers != 6)
+		//TODO: Make this check the correct number of players.
+		if (numPlayers != 3)
 			return false;
 		players[0].role = "None";
 		for (var x = 0; x < numPlayers; x += 1) {

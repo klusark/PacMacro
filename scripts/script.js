@@ -6,7 +6,11 @@ window.onload = function() {
 		var o = JSON.parse(data);
 		if (o.loggedin) {
 			if (o.ingame) {
-				game.Activate();
+				if (o.started) {
+					ingame.Activate();
+				} else {
+					game.Activate();
+				}
 			} else {
 				menu.Activate();
 			}
