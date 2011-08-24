@@ -58,8 +58,10 @@ function InGame() {
 			context.fillStyle = "rgb(255,0,0)";
 		} else if (type == "Clide") {
 			context.fillStyle = "rgb(0,0,255)";
+		} else {
+			context.fillStyle = "rgb(255,255,255)";
 		}
-		context.fillRect(x, y, 16, 16);
+		context.fillRect(x+4, y+4, 8, 8);
 	};
 
 	this.UpdateGame = function(data) {
@@ -101,11 +103,8 @@ function InGame() {
 			context.fillRect(10, 10+128*i, 528, 16);
 		}
 		context.fillStyle = "rgb(255,255,255)";
-		for (var x = 0; x < 5; x += 1) {
-			for (var i = 0; i < 17; i += 1) {
-				context.fillRect(10+128*x, 10+32*i, 16, 16);
-				context.fillRect(10+32*i, 10+128*x, 16, 16);
-			}
+		for (var i = 0; i < 145; i += 1) {
+			this.MarkTile(i);
 		}
 		for (var i = 0; i < tiles.length; i += 1) {
 			this.MarkTile(tiles[i], "Eat");
