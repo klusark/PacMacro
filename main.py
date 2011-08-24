@@ -143,17 +143,23 @@ class GameInfoHandler(webapp.RequestHandler):
 		u = GetUser(user)
 		if not u or not u.game:
 			return
-		response = '{"type":"full","localplayer":"%s","creator":' % user.nickname()
-
-		if u.game.owner == user:
-			response += "true"
+		if u.game.started:
+			response = '{"type":"full","tiles":[""'
+			for i in u.game.eaten:
+				response += ',"%s"' % i
+			response += ']}'
 		else:
-			response += "false"
-		response += ',"players":[{}'
-		for player in u.game.players:
-			u = GetUser(player)
-			response += ',{"name":"%s","role":"%s"}' % (player.nickname(), u.role)
-		response += "]}"
+			response = '{"type":"full","localplayer":"%s","creator":' % user.nickname()
+
+			if u.game.owner == user:
+				response += "true"
+			else:
+				response += "false"
+			response += ',"players":[{}'
+			for player in u.game.players:
+				u = GetUser(player)
+				response += ',{"name":"%s","role":"%s"}' % (player.nickname(), u.role)
+			response += "]}"
 		self.response.out.write(response)
 
 class UpdateSettingsHandler(webapp.RequestHandler):

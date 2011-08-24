@@ -7,6 +7,13 @@ function InGame() {
 		context = canvas.getContext('2d');
 		this.Draw();
 		canvas.addEventListener("click", this.OnClick, false);
+		this.GetGameInfo();
+	};
+
+	this.GetGameInfo = function() {
+		jx.load("getgameinfo", function(data) {
+			ingame.UpdateGame(data);
+		});
 	};
 
 	this.OnClick = function(e) {
@@ -26,25 +33,38 @@ function InGame() {
 		jx.load("moveto?pos="+tile, function(data) {});
 	};
 
-	this.onMessage = function(data) {
-		var o = JSON.parse(data.data);
-		if (o.type == "eat") {
-			var tile = o.pos;
-			var x = 0;
-			var y = 0;
-			if (tile < 85) {
-				x = tile%17;
-				y = ((tile-x)/17)*128+10;
-				x = (x * 32) + 10;
-			} else {
-				tile -= 85;
-				y = tile%12;
-				x = ((tile-y)/12)*128+10;
-				y = (y + Math.floor(y/3)+1)*32+10;
-			}
-			context.fillStyle = "rgb(127,127,127)";
-			context.fillRect(x, y, 16, 16);
+	this.EatTile = function(tile) {
+		var x = 0;
+		var y = 0;
+		if (tile < 85) {
+			x = tile%17;
+			y = ((tile-x)/17)*128+10;
+			x = (x * 32) + 10;
+		} else {
+			tile -= 85;
+			y = tile%12;
+			x = ((tile-y)/12)*128+10;
+			y = (y + Math.floor(y/3)+1)*32+10;
 		}
+		context.fillStyle = "rgb(127,127,127)";
+		context.fillRect(x, y, 16, 16);
+	};
+
+	this.UpdateGame = function(data) {
+		var o = JSON.parse(data);
+		if (o.type == "eat") {
+			this.EatTile(o.pos);
+		} else if (o.type == "full") {
+			var tiles = o.tiles;
+			var tilesLength = tiles.length;
+			for (var i = 1; i < tilesLength; i += 1) {
+				this.EatTile(tiles[i]);
+			}
+		}
+	};
+
+	this.onMessage = function(data) {
+		this.UpdateGame(data.data);
 	};
 
 	this.Draw = function() {
