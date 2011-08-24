@@ -13,6 +13,7 @@ class User(db.Model):
 	user = db.UserProperty()
 	game = db.ReferenceProperty(Game)
 	role = db.StringProperty()
+	pos = db.IntegerProperty()
 
 def GetUser(user):
 	q = User.all()
@@ -112,8 +113,10 @@ class JoinGameHandler(webapp.RequestHandler):
 				if u:
 					u.game = g
 					u.put()
+			else:
+				response = '{"error":"game full"}'
 		else:
-			response = '{"error":"game full"}'
+			response = '{"error":"game not found"}'
 		self.response.out.write(response)
 
 class LeaveGameHandler(webapp.RequestHandler):
@@ -144,10 +147,14 @@ class GameInfoHandler(webapp.RequestHandler):
 		if not u or not u.game:
 			return
 		if u.game.started:
-			response = '{"type":"full","tiles":[""'
-			for i in u.game.eaten:
-				response += ',"%s"' % i
-			response += ']}'
+			if u.role == "Pacman":
+				response = '{"type":"full","tiles":['
+				for i in u.game.eaten:
+					response += '"%s",' % i
+				response = response[:-1]
+				response += ']'
+			else:
+				response = '{"type":"full","tiles":[]'
 		else:
 			response = '{"type":"full","localplayer":"%s","creator":' % user.nickname()
 
@@ -155,11 +162,11 @@ class GameInfoHandler(webapp.RequestHandler):
 				response += "true"
 			else:
 				response += "false"
-			response += ',"players":[{}'
-			for player in u.game.players:
-				u = GetUser(player)
-				response += ',{"name":"%s","role":"%s"}' % (player.nickname(), u.role)
-			response += "]}"
+		response += ',"players":[{}'
+		for player in u.game.players:
+			u = GetUser(player)
+			response += ',{"name":"%s","role":"%s"}' % (player.nickname(), u.role)
+		response += "]}"
 		self.response.out.write(response)
 
 class UpdateSettingsHandler(webapp.RequestHandler):
@@ -199,11 +206,20 @@ class MoveToHandler(webapp.RequestHandler):
 			return
 		poss = self.request.get("pos")
 		pos = int(poss)
-		if not pos in u.game.eaten:
+		u.pos = pos
+		u.put()
+		message = '{"type":"move","pos":"%s","name":"%s","role":"%s"' % (poss, user.nickname(), u.role)
+		if u.role == "Pacman" and not pos in u.game.eaten:
 			u.game.eaten.append(pos)
 			u.game.put()
-			for player in u.game.players:
-				channel.send_message(player.user_id(), '{"type":"eat","pos":"%s"}' % poss)
+			message += ',"eat":"true"}'
+			self.response.out.write(message)
+			return
+		message += "}"
+		for player in u.game.players:
+			p = GetUser(player)
+			if p.role != "Pacman":
+				channel.send_message(player.user_id(), message)
 
 def main():
 	application = webapp.WSGIApplication([
@@ -223,5 +239,4 @@ def main():
 
 if __name__ == '__main__':
 	main()
-
 

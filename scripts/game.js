@@ -69,7 +69,7 @@ function Game() {
 		//TODO: clean this up.
 		var numPlayers = players.length;
 		//TODO: Make this check the correct number of players.
-		if (numPlayers != 3)
+		if (numPlayers != 4)
 			return false;
 		players[0].role = "None";
 		for (var x = 0; x < numPlayers; x += 1) {

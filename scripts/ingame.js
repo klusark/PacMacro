@@ -1,5 +1,7 @@
 function InGame() {
 	var context;
+	var players = [];
+	var tiles = [];
 	this.Activate = function() {
 		channel.Connect(this);
 		body.innerHTML = "<canvas id='canvas' width='548' height='548'></canvas>";
@@ -30,10 +32,10 @@ function InGame() {
 		if (tile == -1) {
 			return;
 		}
-		jx.load("moveto?pos="+tile, function(data) {});
+		jx.load("moveto?pos="+tile, function(data) {ingame.UpdateGame(data);});
 	};
 
-	this.EatTile = function(tile) {
+	this.MarkTile = function(tile, type) {
 		var x = 0;
 		var y = 0;
 		if (tile < 85) {
@@ -46,21 +48,42 @@ function InGame() {
 			x = ((tile-y)/12)*128+10;
 			y = (y + Math.floor(y/3)+1)*32+10;
 		}
-		context.fillStyle = "rgb(127,127,127)";
+		if (type == "Eat") {
+			context.fillStyle = "rgb(127,127,127)";
+		} else if (type == "Pacman") {
+			context.fillStyle = "rgb(255,255,0)";
+		} else if (type == "Pinky") {
+			context.fillStyle = "rgb(255,0,255)";
+		} else if (type == "Inky") {
+			context.fillStyle = "rgb(255,0,0)";
+		} else if (type == "Clide") {
+			context.fillStyle = "rgb(0,0,255)";
+		}
 		context.fillRect(x, y, 16, 16);
 	};
 
 	this.UpdateGame = function(data) {
 		var o = JSON.parse(data);
-		if (o.type == "eat") {
-			this.EatTile(o.pos);
-		} else if (o.type == "full") {
-			var tiles = o.tiles;
-			var tilesLength = tiles.length;
-			for (var i = 1; i < tilesLength; i += 1) {
-				this.EatTile(tiles[i]);
+		if (o.type == "move") {
+			if (o.eat) {
+				//this.MarkTile(o.pos, "Eat");
+				tiles.push(o.pos);
 			}
+			this.MarkTile(o.pos, o.role);
+			for (var i = 0; i < players.length; i += 1) {
+				if (players[i].name == o.name) {
+					players[i].pos = o.pos;
+				}
+			}
+		} else if (o.type == "full") {
+			players = o.players;
+			tiles = o.tiles;
+			var tilesLength = tiles.length;
+			/*for (var i = 0; i < tilesLength; i += 1) {
+				this.MarkTile(tiles[i], "Eat");
+			}*/
 		}
+		this.Draw();
 	};
 
 	this.onMessage = function(data) {
@@ -83,6 +106,12 @@ function InGame() {
 				context.fillRect(10+128*x, 10+32*i, 16, 16);
 				context.fillRect(10+32*i, 10+128*x, 16, 16);
 			}
+		}
+		for (var i = 0; i < tiles.length; i += 1) {
+			this.MarkTile(tiles[i], "Eat");
+		}
+		for (var i = 0; i < players.length; i += 1) {
+			this.MarkTile(players[i].pos, players[i].role);
 		}
 	};
 }
