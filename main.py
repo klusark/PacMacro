@@ -9,6 +9,7 @@ class Game(db.Model):
 	players = db.ListProperty(users.User)
 	started = db.BooleanProperty()
 	eaten = db.ListProperty(int)
+	eatenPowerPill = db.ListProperty(int)
 	powerPillActive = db.BooleanProperty()
 	powerPillStartTime = db.DateTimeProperty()
 	startTime = db.DateTimeProperty()
@@ -159,7 +160,12 @@ class GameInfoHandler(webapp.RequestHandler):
 					response = response[:-1]
 				response += ']'
 			else:
-				response = '{"type":"full","tiles":[]'
+				response = '{"type":"full","tiles":['
+				if u.game.eatenPowerPill:
+					for i in u.game.eatenPowerPill:
+						response += '"%s",' % i
+					response = response[:-1]
+				response += ']'
 		else:
 			response = '{"type":"full","localplayer":"%s","creator":' % user.nickname()
 
@@ -171,7 +177,7 @@ class GameInfoHandler(webapp.RequestHandler):
 		for player in u.game.players:
 			p = GetUser(player)
 			pos = p.pos
-			if p.role == "Pacman" and u.role != "Pacman":
+			if p.role == "Pacman" and u.role != "Pacman" and not u.game.powerPillActive:
 				pos = -1
 			response += '{"name":"%s","role":"%s","pos":"%s"},' % (player.nickname(), p.role, pos)
 		response = response[:-1]
@@ -204,6 +210,7 @@ class StartGameHandler(webapp.RequestHandler):
 		#TODO: make sure the game is actually valid to start.
 		u.game.started = True
 		u.game.startTime = datetime.now()
+		u.game.eaten.append(0)
 		u.game.put()
 		for player in u.game.players:
 			p = GetUser(player)
@@ -232,10 +239,12 @@ class MoveToHandler(webapp.RequestHandler):
 			if pos in [19, 28, 51, 60]:
 				u.game.powerPillActive = True
 				u.game.powerPillStartTime = datetime.now()
+			if u.game.powerPillActive and not pos in u.game.eatenPowerPill:
+				u.game.eatenPowerPill.append(pos)
 			u.game.put()
 		message += "}"
 		self.response.out.write(message)
-		if u.role == "Pacman":
+		if u.role == "Pacman" and not u.game.powerPillActive:
 			return
 		for player in u.game.players:
 			p = GetUser(player)
