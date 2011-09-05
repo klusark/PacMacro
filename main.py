@@ -149,9 +149,10 @@ class GameInfoHandler(webapp.RequestHandler):
 		if u.game.started:
 			if u.role == "Pacman":
 				response = '{"type":"full","tiles":['
-				for i in u.game.eaten:
-					response += '"%s",' % i
-				response = response[:-1]
+				if u.game.eaten:
+					for i in u.game.eaten:
+						response += '"%s",' % i
+					response = response[:-1]
 				response += ']'
 			else:
 				response = '{"type":"full","tiles":[]'
@@ -162,13 +163,14 @@ class GameInfoHandler(webapp.RequestHandler):
 				response += "true"
 			else:
 				response += "false"
-		response += ',"players":[{}'
+		response += ',"players":['
 		for player in u.game.players:
 			p = GetUser(player)
 			pos = p.pos
 			if p.role == "Pacman" and u.role != "Pacman":
 				pos = -1
-			response += ',{"name":"%s","role":"%s","pos":"%s"}' % (player.nickname(), p.role, pos)
+			response += '{"name":"%s","role":"%s","pos":"%s"},' % (player.nickname(), p.role, pos)
+		response = response[:-1]
 		response += "]}"
 		self.response.out.write(response)
 
@@ -199,6 +201,12 @@ class StartGameHandler(webapp.RequestHandler):
 		u.game.started = True
 		u.game.put()
 		for player in u.game.players:
+			p = GetUser(player)
+			if p.role != "Pacman":
+				p.pos = 39
+			else:
+				p.pos = 0
+			p.put()
 			channel.send_message(player.user_id(), '{"type":"startgame"}')
 
 class MoveToHandler(webapp.RequestHandler):
