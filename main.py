@@ -152,6 +152,12 @@ class GameInfoHandler(webapp.RequestHandler):
 		if not u or not u.game:
 			return
 		if u.game.started:
+			if u.game.powerPillActive:
+				time = datetime.utcnow()
+				delta = time - u.game.powerPillStartTime;
+				if delta.seconds > 120:
+					u.game.powerPillActive = False
+					u.game.put();
 			response = '{"type":"full","startTime":"%s","tiles":[' % u.game.startTime
 			if u.role == "Pacman":
 				if u.game.eaten:
@@ -166,9 +172,9 @@ class GameInfoHandler(webapp.RequestHandler):
 
 			response += '],"powerPillActive":'
 			if u.game.powerPillActive:
-				response += '"true","powerPillStart":"%s"' % u.game.powerPillStartTime
+				response += 'true,"powerPillStart":"%s"' % u.game.powerPillStartTime
 			else:
-				response += '"false"'
+				response += 'false'
 		else:
 			response = '{"type":"full","localplayer":"%s","creator":' % user.nickname()
 
@@ -212,7 +218,7 @@ class StartGameHandler(webapp.RequestHandler):
 
 		#TODO: make sure the game is actually valid to start.
 		u.game.started = True
-		u.game.startTime = datetime.now()
+		u.game.startTime = datetime.utcnow()
 		u.game.eaten.append(0)
 		u.game.put()
 		for player in u.game.players:
@@ -238,7 +244,7 @@ class MoveToHandler(webapp.RequestHandler):
 		u.put()
 		message = '{"type":"move","pos":"%s","name":"%s","role":"%s"' % (poss, user.nickname(), u.role)
 		if u.game.powerPillActive:
-			time = datetime.now()
+			time = datetime.utcnow()
 			delta = time - u.game.powerPillStartTime;
 			if delta.seconds > 120:
 				u.game.powerPillActive = False
@@ -249,7 +255,7 @@ class MoveToHandler(webapp.RequestHandler):
 			message += ',"eat":"true"'
 			if pos in [19, 28, 51, 60]:
 				u.game.powerPillActive = True
-				u.game.powerPillStartTime = datetime.now()
+				u.game.powerPillStartTime = datetime.utcnow()
 			if u.game.powerPillActive and not pos in u.game.eatenPowerPill:
 				u.game.eatenPowerPill.append(pos)
 			putGame = True
@@ -257,9 +263,9 @@ class MoveToHandler(webapp.RequestHandler):
 			u.game.put()
 		message += ',"powerPillActive":'
 		if u.game.powerPillActive:
-			message += '"true","powerPillStart":"%s"' % u.game.powerPillStartTime
+			message += 'true,"powerPillStart":"%s"' % u.game.powerPillStartTime
 		else:
-			message += '"false"'
+			message += 'false'
 		message += "}"
 		self.response.out.write(message)
 		if u.role == "Pacman" and not u.game.powerPillActive:

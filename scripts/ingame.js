@@ -129,12 +129,18 @@ function InGame() {
 					players[i].pos = o.pos;
 				}
 			}
+			powerPillActive = o.powerPillActive;
+			if (powerPillActive) {
+				powerPillStart = Date.parse(o.powerPillStart+" GMT");
+			}
 		} else if (o.type == "full") {
 			players = o.players;
 			tiles = o.tiles;
-			startTime = Date.parse(o.startTime);
+			startTime = Date.parse(o.startTime+" GMT");
 			powerPillActive = o.powerPillActive;
-			powerPillStart = Date.parse(o.powerPillStart);
+			if (powerPillActive) {
+				powerPillStart = Date.parse(o.powerPillStart+" GMT");
+			}
 			for (var i = 0; i < players.length; i += 1) {
 				this.MarkTile(players[i].pos, players[i].role);
 			}
@@ -156,7 +162,7 @@ function InGame() {
 
 	this.UpdateScoreBoard = function() {
 		var output = "";
-		var time = Date.now();
+		var time = new Date().getTime();
 		if (startTime) {
 			var delta = time - startTime;
 			delta = 30*60 - Math.floor(delta/1000);
