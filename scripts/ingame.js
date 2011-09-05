@@ -32,15 +32,22 @@ function InGame() {
 	var powerPills = [19, 28, 51, 60];
 
 	var pos = -1;
+	var scoreBoard;
+	var startTime;
+	var powerPillActive = false;
+	var powerPillStart;
 
 	this.Activate = function() {
 		channel.Connect(this);
-		body.innerHTML = "<canvas id='canvas' width='548' height='548'></canvas>";
+		body.innerHTML = "<canvas id='canvas' width='512' height='548'></canvas><div id='scoreboard'></div>";
+		scoreBoard = document.getElementById('scoreboard');
 		canvas = document.getElementById('canvas');
 		context = canvas.getContext('2d');
 		this.Draw();
 		canvas.addEventListener("click", this.OnClick, false);
 		this.GetGameInfo();
+		setInterval(ingame.UpdateScoreBoard, 1000);
+
 	};
 
 	this.GetGameInfo = function() {
@@ -62,7 +69,6 @@ function InGame() {
 				tile = 79+y/2+(x/6)*12-Math.floor(y/8);
 			}
 		}
-		console.log(tile);
 		if (tile == -1) {
 			return;
 		}
@@ -126,15 +132,42 @@ function InGame() {
 		} else if (o.type == "full") {
 			players = o.players;
 			tiles = o.tiles;
-			var tilesLength = tiles.length;
+			startTime = Date.parse(o.startTime);
+			powerPillActive = o.powerPillActive;
+			powerPillStart = Date.parse(o.powerPillStart);
 			for (var i = 0; i < players.length; i += 1) {
 				this.MarkTile(players[i].pos, players[i].role);
 			}
-			/*for (var i = 0; i < tilesLength; i += 1) {
-				this.MarkTile(tiles[i], "Eat");
-			}*/
+			this.UpdateScoreBoard();
 		}
 		this.Draw();
+	};
+
+	this.FormattedMinutesSeconds = function(time) {
+		var seconds = time % 60;
+		var minutes = Math.floor(time / 60);
+		var output = minutes+":";
+		if (seconds < 10) {
+			output += "0";
+		}
+		output += seconds;
+		return output;
+	};
+
+	this.UpdateScoreBoard = function() {
+		var output = "";
+		var time = Date.now();
+		if (startTime) {
+			var delta = time - startTime;
+			delta = 30*60 - Math.floor(delta/1000);
+			output += "Time Left: "+ingame.FormattedMinutesSeconds(delta)+"<br \>";
+		}
+		if (powerPillActive) {
+			var delta = time - powerPillStart;
+			delta = 2*60 - Math.floor(delta/1000);
+			output += "Power Pill Time Left: "+ingame.FormattedMinutesSeconds(delta)+"<br \>";
+		}
+		scoreBoard.innerHTML = output;
 	};
 
 	this.onMessage = function(data) {

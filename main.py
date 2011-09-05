@@ -152,20 +152,23 @@ class GameInfoHandler(webapp.RequestHandler):
 		if not u or not u.game:
 			return
 		if u.game.started:
+			response = '{"type":"full","startTime":"%s","tiles":[' % u.game.startTime
 			if u.role == "Pacman":
-				response = '{"type":"full","tiles":['
 				if u.game.eaten:
 					for i in u.game.eaten:
 						response += '"%s",' % i
 					response = response[:-1]
-				response += ']'
 			else:
-				response = '{"type":"full","tiles":['
 				if u.game.eatenPowerPill:
 					for i in u.game.eatenPowerPill:
 						response += '"%s",' % i
 					response = response[:-1]
-				response += ']'
+
+			response += '],"powerPillActive":'
+			if u.game.powerPillActive:
+				response += '"true","powerPillStart":"%s"' % u.game.powerPillStartTime
+			else:
+				response += '"false"'
 		else:
 			response = '{"type":"full","localplayer":"%s","creator":' % user.nickname()
 
