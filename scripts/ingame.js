@@ -1,7 +1,9 @@
 
 function StaticImage(img, x, y, w, h, ox, oy) {
-	if (!ox || !oy) {
+	if (!ox) {
 		ox = 0;
+	}
+	if (!oy) {
 		oy = 0;
 	}
 
@@ -25,7 +27,10 @@ function InGame() {
 	images["Clide"] = new StaticImage(image, 0, 20, 20, 20);
 	images["Eat"] = new StaticImage(image, 24, 40, 8, 8, 4, 4);
 	images["Pill"] = new StaticImage(image, 16, 40, 8, 8, 4, 4);
-	images["PowerPill"] = new StaticImage(image, 0, 40, 16, 8, 0, 48);
+	images["PowerPill"] = new StaticImage(image, 0, 40, 16, 8, 0, 4);
+	images["PowerPillEat"] = new StaticImage(image, 31, 40, 16, 8, 0, 4);
+
+	var powerPills = [19, 28, 51, 60];
 
 	var pos = -1;
 
@@ -58,6 +63,7 @@ function InGame() {
 				tile = 79+y/2+(x/6)*12-Math.floor(y/8);
 			}
 		}
+		console.log(tile);
 		if (tile == -1) {
 			return;
 		}
@@ -110,7 +116,6 @@ function InGame() {
 		var o = JSON.parse(data);
 		if (o.type == "move") {
 			if (o.eat) {
-				//this.MarkTile(o.pos, "Eat");
 				tiles.push(o.pos);
 			}
 			this.MarkTile(o.pos, o.role);
@@ -151,14 +156,19 @@ function InGame() {
 
 		context.fillStyle = "rgb(255,255,255)";
 		for (var i = 0; i < 152; i += 1) {
-			if (i == 19 || i == 28 || i == 51 || i == 60) {
+			if (powerPills.indexOf(i) != -1) {
 				this.MarkTile(i, "PowerPill");
 			} else {
 				this.MarkTile(i, "Pill");
 			}
 		}
 		for (var i = 0; i < tiles.length; i += 1) {
-			this.MarkTile(tiles[i], "Eat");
+			var x = parseInt(tiles[i]);
+			if (powerPills.indexOf(x) != -1) {
+				this.MarkTile(x, "PowerPillEat");
+			} else {
+				this.MarkTile(x, "Eat");
+			}
 		}
 		for (var i = 0; i < players.length; i += 1) {
 			this.MarkTile(players[i].pos, players[i].role);
