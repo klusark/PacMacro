@@ -164,8 +164,11 @@ class GameInfoHandler(webapp.RequestHandler):
 				response += "false"
 		response += ',"players":[{}'
 		for player in u.game.players:
-			u = GetUser(player)
-			response += ',{"name":"%s","role":"%s"}' % (player.nickname(), u.role)
+			p = GetUser(player)
+			pos = p.pos
+			if p.role == "Pacman" and u.role != "Pacman":
+				pos = -1
+			response += ',{"name":"%s","role":"%s","pos":"%s"}' % (player.nickname(), p.role, pos)
 		response += "]}"
 		self.response.out.write(response)
 
@@ -212,13 +215,14 @@ class MoveToHandler(webapp.RequestHandler):
 		if u.role == "Pacman" and not pos in u.game.eaten:
 			u.game.eaten.append(pos)
 			u.game.put()
-			message += ',"eat":"true"}'
-			self.response.out.write(message)
-			return
+			message += ',"eat":"true"'
 		message += "}"
+		self.response.out.write(message)
+		if u.role == "Pacman":
+			return
 		for player in u.game.players:
 			p = GetUser(player)
-			if p.role != "Pacman":
+			if p != u:
 				channel.send_message(player.user_id(), message)
 
 def main():

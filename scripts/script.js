@@ -1,7 +1,7 @@
 var body;
 
 window.onload = function() {
-	body = document.getElementById("body");
+	body = document.getElementById("content");
 	jx.load("login", function(data) {
 		var o = JSON.parse(data);
 		if (o.loggedin) {

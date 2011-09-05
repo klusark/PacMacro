@@ -11,7 +11,7 @@ function StaticImage(img, x, y, w, h, ox, oy) {
 }
 
 function InGame() {
-	var context;
+	var context, canvas;
 	var players = [];
 	var tiles = [];
 	var image = new Image();
@@ -32,7 +32,7 @@ function InGame() {
 	this.Activate = function() {
 		channel.Connect(this);
 		body.innerHTML = "<canvas id='canvas' width='548' height='548'></canvas>";
-		var canvas = document.getElementById('canvas');
+		canvas = document.getElementById('canvas');
 		context = canvas.getContext('2d');
 		this.Draw();
 		canvas.addEventListener("click", this.OnClick, false);
@@ -46,8 +46,18 @@ function InGame() {
 	};
 
 	this.OnClick = function(e) {
-		var x = Math.floor((e.pageX-18)/16);
-		var y = Math.floor((e.pageY-18)/16);
+		  var x, y;
+
+		// Get the mouse position relative to the canvas element.
+		if (e.layerX || e.layerX == 0) { // Firefox
+			x = e.layerX;
+			y = e.layerY;
+		} else if (e.offsetX || e.offsetX == 0) { // Opera
+			x = e.offsetX;
+			y = e.offsetY;
+		}
+		x = Math.floor((x-10)/16);
+		y = Math.floor((y-10)/16);
 		var tile = -1;
 		if ((x%2 == 0 && y%2 == 0)){
 			if (y%8 == 0) {
@@ -56,7 +66,7 @@ function InGame() {
 				tile = 79+y/2+(x/6)*12-Math.floor(y/8);
 			}
 		}
-		console.log(tile, x, y);
+		//console.log(tile, x, y);
 		if (tile == -1) {
 			return;
 		}
