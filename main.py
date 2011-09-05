@@ -227,11 +227,19 @@ class MoveToHandler(webapp.RequestHandler):
 		u = GetUser(user)
 		if not u:
 			return
+		putGame = False
+
 		poss = self.request.get("pos")
 		pos = int(poss)
 		u.pos = pos
 		u.put()
 		message = '{"type":"move","pos":"%s","name":"%s","role":"%s"' % (poss, user.nickname(), u.role)
+		if u.game.powerPillActive:
+			time = datetime.now()
+			delta = time - u.game.powerPillStartTime;
+			if delta.seconds > 120:
+				u.game.powerPillActive = False
+				putGame = True
 		if u.role == "Pacman" and not pos in u.game.eaten:
 			u.game.eaten.append(pos)
 
@@ -241,7 +249,14 @@ class MoveToHandler(webapp.RequestHandler):
 				u.game.powerPillStartTime = datetime.now()
 			if u.game.powerPillActive and not pos in u.game.eatenPowerPill:
 				u.game.eatenPowerPill.append(pos)
+			putGame = True
+		if putGame:
 			u.game.put()
+		message += ',"powerPillActive":'
+		if u.game.powerPillActive:
+			message += '"true","powerPillStart":"%s"' % u.game.powerPillStartTime
+		else:
+			message += '"false"'
 		message += "}"
 		self.response.out.write(message)
 		if u.role == "Pacman" and not u.game.powerPillActive:
