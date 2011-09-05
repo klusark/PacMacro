@@ -7,7 +7,7 @@ function Game() {
 	<option>Inky</option>\
 	<option>Blinky</option>\
 	<option>Pinky</option>\
-	<option>Clide</option>\
+	<option>Clyde</option>\
 	</select>\
 	<input type='submit' value='Leave Game' onClick='game.Leave();' />\
 	<input type='submit' value='Start Game' id='startbutton' onClick='game.StartGame();' />";
