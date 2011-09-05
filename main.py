@@ -1,6 +1,7 @@
 from google.appengine.api import channel, users
 from google.appengine.ext import db, webapp
 from google.appengine.ext.webapp import util
+from datetime import datetime
 
 class Game(db.Model):
 	name = db.StringProperty(required=True)
@@ -8,6 +9,9 @@ class Game(db.Model):
 	players = db.ListProperty(users.User)
 	started = db.BooleanProperty()
 	eaten = db.ListProperty(int)
+	powerPillActive = db.BooleanProperty()
+	powerPillStartTime = db.DateTimeProperty()
+	startTime = db.DateTimeProperty()
 
 class User(db.Model):
 	user = db.UserProperty()
@@ -71,7 +75,7 @@ class CreateGameHandler(webapp.RequestHandler):
 		if (games):
 			self.response.out.write("Game already exists with that name")
 		else:
-			game = Game(name=name, owner=user)
+			game = Game(name=name, owner=user, powerPillActive=False, started=False)
 			game.players.append(user)
 			game.put()
 			q = User.all()
@@ -199,6 +203,7 @@ class StartGameHandler(webapp.RequestHandler):
 
 		#TODO: make sure the game is actually valid to start.
 		u.game.started = True
+		u.game.startTime = datetime.now()
 		u.game.put()
 		for player in u.game.players:
 			p = GetUser(player)
@@ -222,8 +227,12 @@ class MoveToHandler(webapp.RequestHandler):
 		message = '{"type":"move","pos":"%s","name":"%s","role":"%s"' % (poss, user.nickname(), u.role)
 		if u.role == "Pacman" and not pos in u.game.eaten:
 			u.game.eaten.append(pos)
-			u.game.put()
+
 			message += ',"eat":"true"'
+			if pos in [19, 28, 51, 60]:
+				u.game.powerPillActive = True
+				u.game.powerPillStartTime = datetime.now()
+			u.game.put()
 		message += "}"
 		self.response.out.write(message)
 		if u.role == "Pacman":

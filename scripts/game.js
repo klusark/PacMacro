@@ -46,7 +46,7 @@ function Game() {
 		var numPlayers = players.length;
 		var table = "<tr><td>Name</td><td>Desired Role</td></tr>";
 		var role = "None";
-		for (var i = 1; i < numPlayers; i += 1) {
+		for (var i = 0; i < numPlayers; i += 1) {
 			table += "<tr><td>"+players[i].name+"</td><td>"+players[i].role+"</td></tr>";
 			if (players[i].name == localPlayerName) {
 				role = players[i].role;
@@ -69,11 +69,11 @@ function Game() {
 		//TODO: clean this up.
 		var numPlayers = players.length;
 		//TODO: Make this check the correct number of players.
-		if (numPlayers != 4)
+		if (numPlayers != 3)
 			return false;
-		players[0].role = "None";
+		//players[0].role = "None";
 		for (var x = 0; x < numPlayers; x += 1) {
-			for (var y = 1; y < numPlayers; y += 1) {
+			for (var y = 0; y < numPlayers; y += 1) {
 				if ((x != y && players[x].role == players[y].role)) {
 					return false;
 				}
@@ -102,7 +102,7 @@ function Game() {
 			}
 		} else if (o.type == "player") {
 			var numPlayers = players.length;
-			for (var i = 1; i < numPlayers; i += 1) {
+			for (var i = 0; i < numPlayers; i += 1) {
 				if (players[i].name == o.player.name) {
 					players[i] = o.player
 					break;

@@ -24,7 +24,6 @@ function InGame() {
 	images["Blinky"] = new StaticImage(image, 20, 20, 20, 20);
 	images["Pinky"] = new StaticImage(image, 40, 20, 20, 20);
 	images["Clyde"] = new StaticImage(image, 0, 20, 20, 20);
-	images["Clide"] = new StaticImage(image, 0, 20, 20, 20);
 	images["Eat"] = new StaticImage(image, 24, 40, 8, 8, 4, 4);
 	images["Pill"] = new StaticImage(image, 16, 40, 8, 8, 4, 4);
 	images["PowerPill"] = new StaticImage(image, 0, 40, 16, 8, 0, 4);
