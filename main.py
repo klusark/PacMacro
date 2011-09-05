@@ -8,11 +8,20 @@ class Game(db.Model):
 	owner = db.UserProperty()
 	players = db.ListProperty(users.User)
 	started = db.BooleanProperty()
+	ended = db.BooleanProperty()
+	score = db.IntegerProperty()
 	eaten = db.ListProperty(int)
 	eatenPowerPill = db.ListProperty(int)
 	powerPillActive = db.BooleanProperty()
 	powerPillStartTime = db.DateTimeProperty()
 	startTime = db.DateTimeProperty()
+	def CheckPowerPill(self):
+		if self.powerPillActive:
+			time = datetime.utcnow()
+			delta = time - self.powerPillStartTime;
+			if delta.seconds > 120:
+				self.powerPillActive = False
+				self.put()
 
 class User(db.Model):
 	user = db.UserProperty()
@@ -89,13 +98,17 @@ class CreateGameHandler(webapp.RequestHandler):
 class GetGameListHandler(webapp.RequestHandler):
 	def get(self):
 		q = Game.all()
-		games = q.fetch(10);
+		games = q.fetch(10)
 
-		response = '{"game":[""'
-
+		response = '{"game":['
+		empty = True;
 		for game in games:
-			response += ',"%s"' % game.name
-		response = response + "]}"
+			if not game.started:
+				response += '"%s",' % game.name
+				empty = False
+		if empty:
+			response = response[:-1]
+		response += "]}"
 		self.response.out.write(response)
 
 class JoinGameHandler(webapp.RequestHandler):
@@ -152,12 +165,7 @@ class GameInfoHandler(webapp.RequestHandler):
 		if not u or not u.game:
 			return
 		if u.game.started:
-			if u.game.powerPillActive:
-				time = datetime.utcnow()
-				delta = time - u.game.powerPillStartTime;
-				if delta.seconds > 120:
-					u.game.powerPillActive = False
-					u.game.put();
+			u.game.CheckPowerPill()
 			response = '{"type":"full","startTime":"%s","tiles":[' % u.game.startTime
 			if u.role == "Pacman":
 				if u.game.eaten:
@@ -243,12 +251,7 @@ class MoveToHandler(webapp.RequestHandler):
 		u.pos = pos
 		u.put()
 		message = '{"type":"move","pos":"%s","name":"%s","role":"%s"' % (poss, user.nickname(), u.role)
-		if u.game.powerPillActive:
-			time = datetime.utcnow()
-			delta = time - u.game.powerPillStartTime;
-			if delta.seconds > 120:
-				u.game.powerPillActive = False
-				putGame = True
+		u.game.CheckPowerPill()
 		if u.role == "Pacman" and not pos in u.game.eaten:
 			u.game.eaten.append(pos)
 
