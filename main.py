@@ -18,7 +18,7 @@ class Game(db.Model):
 	def CheckPowerPill(self):
 		if self.powerPillActive:
 			time = datetime.utcnow()
-			delta = time - self.powerPillStartTime;
+			delta = time - self.powerPillStartTime
 			if delta.seconds > 120:
 				self.powerPillActive = False
 				self.put()
@@ -101,7 +101,7 @@ class GetGameListHandler(webapp.RequestHandler):
 		games = q.fetch(10)
 
 		response = '{"game":['
-		empty = True;
+		empty = True
 		for game in games:
 			if not game.started:
 				response += '"%s",' % game.name
@@ -118,7 +118,7 @@ class JoinGameHandler(webapp.RequestHandler):
 		name = self.request.get("name")
 		q.filter("name", name)
 		response = "{}"
-		game = q.fetch(1);
+		game = q.fetch(1)
 		if game and game[0]:
 			g = game[0]
 			if len(g.players) < 5:
@@ -144,7 +144,7 @@ class LeaveGameHandler(webapp.RequestHandler):
 		if not u:
 			return
 		if u.game.started:
-			return;
+			return
 		if user == u.game.owner:
 			for player in u.game.players:
 				p = GetUser(player)
@@ -221,7 +221,7 @@ class UpdateSettingsHandler(webapp.RequestHandler):
 		for player in u.game.players:
 			channel.send_message(player.user_id(), '{"type":"player","player":{"name":"%s", "role":"%s"}}' % (user.nickname(), role))
 
-		u.role = role;
+		u.role = role
 		u.put()
 
 class StartGameHandler(webapp.RequestHandler):
