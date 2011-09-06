@@ -1,4 +1,5 @@
-from google.appengine.api import channel, users
+from google.appengine.api import channel
+from gaesessions import get_current_session
 from google.appengine.ext import db, webapp
 from google.appengine.ext.webapp import util
 from datetime import datetime
@@ -6,7 +7,7 @@ from datetime import datetime
 class Game(db.Model):
 	name = db.StringProperty(required=True)
 	owner = db.UserProperty()
-	players = db.ListProperty(users.User)
+	players = db.ListProperty(db.Key)
 	started = db.BooleanProperty()
 	ended = db.BooleanProperty()
 	score = db.IntegerProperty()
@@ -24,7 +25,8 @@ class Game(db.Model):
 				self.put()
 
 class User(db.Model):
-	user = db.UserProperty()
+	username = db.StringProperty()
+	password = db.StringProperty()
 	game = db.ReferenceProperty(Game)
 	role = db.StringProperty()
 	pos = db.IntegerProperty()
@@ -41,9 +43,18 @@ def GetUser(user):
 def IsRoleGood(role):
 	return True
 
+def GetSessionUser():
+	session = get_current_session()
+	user = None
+	if session.is_active():
+		key = session.get("key")
+		user = User.get(key)
+	session.regenerate_id()
+	return user
+
 class LoginHandler(webapp.RequestHandler):
 	def get(self):
-		user = users.get_current_user()
+		user = GetSessionUser()
 
 		response = '{"loggedin":'
 		if user:
@@ -63,7 +74,7 @@ class LoginHandler(webapp.RequestHandler):
 				response += "false"
 
 		else:
-			response += 'false,"url":"%s"' % users.create_login_url("/")
+			response += 'false'
 		response += "}"
 		self.response.out.write(response)
 
