@@ -143,6 +143,8 @@ class LeaveGameHandler(webapp.RequestHandler):
 		u = GetUser(user)
 		if not u:
 			return
+		if u.game.started:
+			return;
 		if user == u.game.owner:
 			for player in u.game.players:
 				p = GetUser(player)
@@ -184,21 +186,26 @@ class GameInfoHandler(webapp.RequestHandler):
 			else:
 				response += 'false'
 		else:
-			response = '{"type":"full","localplayer":"%s","creator":' % user.nickname()
+			response = '{"type":"full","creator":'
 
 			if u.game.owner == user:
 				response += "true"
 			else:
 				response += "false"
 		response += ',"players":['
+		localPlayer = -1
+		i = 0
 		for player in u.game.players:
+			if player == user:
+				localPlayer = i
 			p = GetUser(player)
 			pos = p.pos
 			if p.role == "Pacman" and u.role != "Pacman" and not u.game.powerPillActive:
 				pos = -1
 			response += '{"name":"%s","role":"%s","pos":"%s"},' % (player.nickname(), p.role, pos)
+			i += 1
 		response = response[:-1]
-		response += "]}"
+		response += '],"localPlayer":"%s"}' % localPlayer
 		self.response.out.write(response)
 
 class UpdateSettingsHandler(webapp.RequestHandler):

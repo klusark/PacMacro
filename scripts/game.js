@@ -13,7 +13,7 @@ function Game() {
 	<input type='submit' value='Start Game' id='startbutton' onClick='game.StartGame();' />";
 	var creator;
 	var players;
-	var localPlayerName;
+	var localPlayerId = -1;
 
 	this.Activate = function() {
 		this.GetGameInfo();
@@ -48,9 +48,9 @@ function Game() {
 		var role = "None";
 		for (var i = 0; i < numPlayers; i += 1) {
 			table += "<tr><td>"+players[i].name+"</td><td>"+players[i].role+"</td></tr>";
-			if (players[i].name == localPlayerName) {
-				role = players[i].role;
-			}
+		}
+		if (localPlayerId != -1) {
+			role = players[localPlayerId].role;
 		}
 		document.getElementById("players").innerHTML = table;
 
@@ -89,7 +89,7 @@ function Game() {
 		if (o.type == "full") {
 			creator = o.creator;
 			players = o.players;
-			localPlayerName = o.localplayer;
+			localPlayerId = o.localPlayer;
 		} else if (o.type == "playerjoin") {
 			players.push(o.player);
 		} else if (o.type == "playerleave") {

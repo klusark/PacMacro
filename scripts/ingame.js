@@ -36,6 +36,7 @@ function InGame() {
 	var startTime;
 	var powerPillActive = false;
 	var powerPillStart;
+	var localPlayerId;
 
 	this.Activate = function() {
 		channel.Connect(this);
@@ -144,6 +145,7 @@ function InGame() {
 			for (var i = 0; i < players.length; i += 1) {
 				this.MarkTile(players[i].pos, players[i].role);
 			}
+			localPlayerId = o.localPlayer;
 			this.UpdateScoreBoard();
 		}
 		this.Draw();

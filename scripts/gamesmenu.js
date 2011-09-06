@@ -21,8 +21,6 @@ function GamesMenu() {
 	};
 
 	this.CreateGame = function() {
-		//var value = document.getElementById("gamename").value;
-		//jx.load("creategame?name="+value, function(data) {});
 		create.Activate();
 	};
 
