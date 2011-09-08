@@ -372,6 +372,22 @@ class EatenHandler(webapp.RequestHandler):
 		for player in user.game.players:
 			channel.send_message(str(player.id()), message)
 
+class ScoreboardHandler(webapp.RequestHandler):
+	def get(self):
+		q = Game.all()
+		games = q.fetch(10)
+
+		response = '{"game":['
+		empty = True
+		for game in games:
+			if game.ended:
+				response += '{"name":"%s","score":"%s"},' % (game.name, game.score)
+				empty = False
+		if not empty:
+			response = response[:-1]
+		response += "]}"
+		self.response.out.write(response)
+
 def main():
 	application = webapp.WSGIApplication([
 										('/login', LoginHandler),
@@ -386,6 +402,7 @@ def main():
 										('/updatesettings', UpdateSettingsHandler),
 										('/startgame', StartGameHandler),
 										('/eaten', EatenHandler),
+										('/scoreboard', ScoreboardHandler),
 										('/moveto', MoveToHandler)],
 										 debug=True)
 	util.run_wsgi_app(application)
