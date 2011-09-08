@@ -136,6 +136,8 @@ function InGame() {
 				powerPillStart = Date.parse(o.powerPillStart+" GMT");
 			}
 			score = o.score
+		}else if (o.type == "score") {
+			score = o.score
 		} else if (o.type == "full") {
 			players = o.players;
 			tiles = o.tiles;
@@ -177,7 +179,11 @@ function InGame() {
 		if (powerPillActive) {
 			var delta = time - powerPillStart;
 			delta = 2*60 - Math.floor(delta/1000);
-			output += "Power Pill Time Left: "+ingame.FormattedMinutesSeconds(delta)+"<br \>";
+			if (delta < 0) {
+				powerPillActive = false;
+			} else {
+				output += "Power Pill Time Left: "+ingame.FormattedMinutesSeconds(delta)+"<br \>";
+			}
 		}
 		output += "Score: "+score+"<br \>";
 		output += "<input type='submit' onclick='ingame.Eaten();' value='I was eaten'>";

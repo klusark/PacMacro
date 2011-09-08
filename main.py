@@ -31,6 +31,7 @@ class User(db.Model):
 	game = db.ReferenceProperty(Game)
 	role = db.StringProperty()
 	pos = db.IntegerProperty()
+	dead = db.BooleanProperty()
 
 def IsRoleGood(role):
 	return True
@@ -285,6 +286,7 @@ class MoveToHandler(webapp.RequestHandler):
 			if pos in [19, 28, 51, 60]:
 				u.game.powerPillActive = True
 				u.game.powerPillStartTime = datetime.utcnow()
+				u.game.numEaten = 0
 				u.game.score += 50
 			else:
 				u.game.score += 10
@@ -313,12 +315,17 @@ class EatenHandler(webapp.RequestHandler):
 		user = GetSessionUser()
 		user.game.CheckPowerPill()
 		if user.role == "Pacman" and not user.game.powerPillActive:
-			
+
 			pass #end the game
-		elif user.game.powerPillActive:
+		elif user.game.powerPillActive and not user.dead:
 			user.game.numEaten += 1
 			user.game.score += 100 * user.game.numEaten
 			user.game.put()
+			user.dead = True;
+			user.put()
+		message = '{"type":"score","score":"%s"}' % user.game.score
+		for player in user.game.players:
+			channel.send_message(str(player.id()), message)
 
 def main():
 	application = webapp.WSGIApplication([
