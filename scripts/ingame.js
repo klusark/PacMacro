@@ -37,7 +37,8 @@ function InGame() {
 	powerPillActive = false,
 	powerPillStart,
 	localPlayerId,
-	score;
+	score,
+	gameLength;
 
 	this.Activate = function() {
 		channel.Connect(this);
@@ -135,7 +136,7 @@ function InGame() {
 			if (powerPillActive) {
 				powerPillStart = Date.parse(o.powerPillStart+" GMT");
 			}
-			score = o.score
+			score = o.score;
 		}else if (o.type == "score") {
 			score = o.score
 		} else if (o.type == "full") {
@@ -151,6 +152,7 @@ function InGame() {
 			}
 			localPlayerId = o.localPlayer;
 			score = o.score;
+			gameLength = o.gamelength;
 			pos = players[localPlayerId].pos;
 			this.UpdateScoreBoard();
 		}
@@ -173,7 +175,7 @@ function InGame() {
 		var time = new Date().getTime();
 		if (startTime) {
 			var delta = time - startTime;
-			delta = 30*60 - Math.floor(delta/1000);
+			delta = gameLength *60 - Math.floor(delta/1000);
 			output += "Time Left: "+ingame.FormattedMinutesSeconds(delta)+"<br \>";
 		}
 		if (powerPillActive) {

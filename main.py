@@ -17,6 +17,7 @@ class Game(db.Model):
 	powerPillStartTime = db.DateTimeProperty()
 	startTime = db.DateTimeProperty()
 	numEaten = db.IntegerProperty()
+	gameLength = db.IntegerProperty()
 	def CheckPowerPill(self):
 		if self.powerPillActive:
 			time = datetime.utcnow()
@@ -24,7 +25,12 @@ class Game(db.Model):
 			if delta.seconds > 120:
 				self.powerPillActive = False
 				self.put()
-
+	def CheckGameEnd(self):
+		time = datetime.utcnow()
+		delta = time - self.powerPillStartTime
+		if delta.seconds > self.gameLength*60:
+			self.ended = True
+			self.put()
 class User(db.Model):
 	username = db.StringProperty()
 	password = db.StringProperty()
@@ -128,7 +134,7 @@ class CreateGameHandler(webapp.RequestHandler):
 		if (games):
 			self.response.out.write("Game already exists with that name")
 		else:
-			game = Game(name=name, owner=user, powerPillActive=False, started=False, score=0, numEaten=0)
+			game = Game(name=name, owner=user, powerPillActive=False, started=False, score=0, numEaten=0, gameLength=30)
 			game.players.append(user.key())
 			game.put()
 			user.game = game
@@ -200,7 +206,7 @@ class GameInfoHandler(webapp.RequestHandler):
 			return
 		if user.game.started:
 			user.game.CheckPowerPill()
-			response = '{"type":"full","startTime":"%s","score":"%s","tiles":[' % (user.game.startTime, user.game.score)
+			response = '{"type":"full","gamelength":"%s","startTime":"%s","score":"%s","tiles":[' % (user.game.gameLength, user.game.startTime, user.game.score)
 			if user.role == "Pacman":
 				if user.game.eaten:
 					for i in user.game.eaten:
@@ -244,16 +250,23 @@ class UpdateSettingsHandler(webapp.RequestHandler):
 	def get(self):
 		user = GetSessionUser()
 		role = self.request.get("role")
-		if not IsRoleGood(role):
-			return
-		if not user:
-			return
-
-		for player in user.game.players:
-			channel.send_message(str(player.id()), '{"type":"player","player":{"name":"%s", "role":"%s"}}' % (user.username, role))
-
-		user.role = role
-		user.put()
+		gameLength = self.request.get("length")
+		if role:
+			if not IsRoleGood(role):
+				return
+			if not user:
+				return
+	
+			for player in user.game.players:
+				channel.send_message(str(player.id()), '{"type":"player","player":{"name":"%s", "role":"%s"}}' % (user.username, role))
+	
+			user.role = role
+			user.put()
+		if gameLength:
+			user.game.gameLength = int(gameLength)
+			user.game.put()
+			for player in user.game.players:
+				channel.send_message(str(player.id()), '{"type":"length","length":"%s"}' % gameLength)
 
 class StartGameHandler(webapp.RequestHandler):
 	def get(self):

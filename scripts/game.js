@@ -9,11 +9,26 @@ function Game() {
 	<option>Pinky</option>\
 	<option>Clyde</option>\
 	</select>\
+	<select id='length' onChange='game.SetLength(this.options[this.selectedIndex].value);' disabled>\
+	<option>5</option>\
+	<option>10</option>\
+	<option>15</option>\
+	<option>20</option>\
+	<option>25</option>\
+	<option selected>30</option>\
+	<option>35</option>\
+	<option>40</option>\
+	<option>45</option>\
+	<option>50</option>\
+	<option>55</option>\
+	<option>60</option>\
+	</select>\
 	<input type='submit' value='Leave Game' onClick='game.Leave();' />\
-	<input type='submit' value='Start Game' id='startbutton' onClick='game.StartGame();' />";
+	<input type='submit' value='Start Game' id='startbutton' onClick='game.StartGame();' disabled />";
 	var creator;
 	var players;
-	var localPlayerId = -1;
+	var localPlayerId = -1,
+	gameLength;
 
 	this.Activate = function() {
 		this.GetGameInfo();
@@ -55,7 +70,8 @@ function Game() {
 		document.getElementById("players").innerHTML = table;
 
 		document.getElementById("startbutton").disabled = !this.AllowedToStart();
-
+		var length = document.getElementById("length");
+		length.disabled = !creator;
 		var roles = document.getElementById("roles");
 		for (var i = 0; i < 6; i += 1) {
 			if (roles.options[i].value == role) {
@@ -63,9 +79,16 @@ function Game() {
 				break;
 			}
 		}
+		for (var i = 0; i < 12; i += 1) {
+			if (length.options[i].value == gameLength) {
+				length.selectedIndex = i;
+				break;
+			}
+		}
 	};
 
 	this.AllowedToStart = function() {
+		return creator;
 		//TODO: clean this up.
 		var numPlayers = players.length;
 		//TODO: Make this check the correct number of players.
@@ -114,6 +137,9 @@ function Game() {
 		} else if (o.type == "startgame") {
 			ingame.Activate();
 			return;
+		} else if (o.type == "length") {
+			gameLength = o.length;
+			
 		}
 		this.Update();
 	};
@@ -126,6 +152,11 @@ function Game() {
 
 	this.SelectRole = function(role) {
 		jx.load("updatesettings?role="+role, function(data) {
+		});
+	};
+	
+	this.SetLength = function(length) {
+		jx.load("updatesettings?length="+length, function(data) {
 		});
 	};
 }
