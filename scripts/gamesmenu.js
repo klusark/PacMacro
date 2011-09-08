@@ -13,7 +13,7 @@ function GamesMenu() {
 			var tableData = "<tr><td>Name</td><td>Join</td></tr>";
 			var o = JSON.parse(data);
 			var len = o.game.length;
-			for (var i = 1; i < len; i += 1) {
+			for (var i = 0; i < len; i += 1) {
 				tableData += "<tr><td>"+o.game[i]+"</td><td><input type='submit' value='Join' onclick='menu.JoinGame(\""+o.game[i]+"\");'/></td></tr>";
 			}
 			document.getElementById("games").innerHTML = tableData;

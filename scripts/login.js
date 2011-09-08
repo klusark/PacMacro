@@ -1,8 +1,8 @@
 function Login() {
 	var html = "<input type='text' id='user' /><br />\
 	<input type='password' id='pass' /><br />\
-	<input type='submit' value='Login' onclick='login.Request('login');' />\
-	<input type='submit' value='Sign Up' onclick='login.Request('signup');' />";
+	<input type='submit' value='Login' onclick='login.Request(\"login\")' />\
+	<input type='submit' value='Sign Up' onclick='login.Request(\"signup\");' />";
 
 	this.Activate = function() {
 		body.innerHTML = html;
