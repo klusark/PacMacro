@@ -132,8 +132,8 @@ class GetGameListHandler(webapp.RequestHandler):
 			if not game.started:
 				response += '"%s",' % game.name
 				empty = False
-		#if not empty:
-		response = response[:-1]
+		if not empty:
+			response = response[:-1]
 		response += "]}"
 		self.response.out.write(response)
 
@@ -260,7 +260,7 @@ class StartGameHandler(webapp.RequestHandler):
 			else:
 				p.pos = 0
 			p.put()
-			channel.send_message(player.user_id(), '{"type":"startgame"}')
+			channel.send_message(str(player.id()), '{"type":"startgame"}')
 
 class MoveToHandler(webapp.RequestHandler):
 	def get(self):
@@ -275,7 +275,7 @@ class MoveToHandler(webapp.RequestHandler):
 		pos = int(poss)
 		u.pos = pos
 		u.put()
-		message = '{"type":"move","pos":"%s","name":"%s","role":"%s"' % (poss, user.nickname(), u.role)
+		message = '{"type":"move","pos":"%s","name":"%s","role":"%s"' % (poss, user.username, u.role)
 		u.game.CheckPowerPill()
 		if u.role == "Pacman" and not pos in u.game.eaten:
 			u.game.eaten.append(pos)
