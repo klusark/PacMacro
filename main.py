@@ -150,12 +150,10 @@ class JoinGameHandler(webapp.RequestHandler):
 			if len(g.players) < 5:
 				for player in g.players:
 					channel.send_message(str(player.id()), '{"type":"playerjoin","player":{"name":"%s", "role":"%s"}}' % (user.username, user.role))
-				g.players.append(user)
+				g.players.append(user.key())
 				g.put()
-
-				if user:
-					user.game = g
-					user.put()
+				user.game = g
+				user.put()
 			else:
 				response = '{"error":"game full"}'
 		else:
@@ -175,7 +173,7 @@ class LeaveGameHandler(webapp.RequestHandler):
 				channel.send_message(player.user_id(), '{"type":"gameend"}')
 			user.game.delete()
 		elif user in user.game.players:
-			user.game.players.remove(user)
+			user.game.players.remove(user.key())
 			for player in user.game.players:
 				channel.send_message(player.user_id(), '{"type":"playerleave","player":"%s"}' % user.nickname())
 			user.game.put()
@@ -209,7 +207,7 @@ class GameInfoHandler(webapp.RequestHandler):
 		else:
 			response = '{"type":"full","creator":'
 
-			if user.game.owner == user:
+			if user.game.owner.key() == user.key():
 				response += "true"
 			else:
 				response += "false"
@@ -256,7 +254,7 @@ class StartGameHandler(webapp.RequestHandler):
 		user.game.eaten.append(0)
 		user.game.put()
 		for player in user.game.players:
-			p = Game.get(player)
+			p = User.get(player)
 			if p.role != "Pacman":
 				p.pos = 39
 			else:
