@@ -16,6 +16,7 @@ class Game(db.Model):
 	powerPillActive = db.BooleanProperty()
 	powerPillStartTime = db.DateTimeProperty()
 	startTime = db.DateTimeProperty()
+	numEaten = db.IntegerProperty()
 	def CheckPowerPill(self):
 		if self.powerPillActive:
 			time = datetime.utcnow()
@@ -115,7 +116,7 @@ class CreateGameHandler(webapp.RequestHandler):
 		if (games):
 			self.response.out.write("Game already exists with that name")
 		else:
-			game = Game(name=name, owner=user, powerPillActive=False, started=False)
+			game = Game(name=name, owner=user, powerPillActive=False, started=False, score=0, numEaten=0)
 			game.players.append(user.key())
 			game.put()
 			user.game = game
@@ -187,7 +188,7 @@ class GameInfoHandler(webapp.RequestHandler):
 			return
 		if user.game.started:
 			user.game.CheckPowerPill()
-			response = '{"type":"full","startTime":"%s","tiles":[' % user.game.startTime
+			response = '{"type":"full","startTime":"%s","score":"%s","tiles":[' % (user.game.startTime, user.game.score)
 			if user.role == "Pacman":
 				if user.game.eaten:
 					for i in user.game.eaten:
@@ -284,12 +285,17 @@ class MoveToHandler(webapp.RequestHandler):
 			if pos in [19, 28, 51, 60]:
 				u.game.powerPillActive = True
 				u.game.powerPillStartTime = datetime.utcnow()
-			if u.game.powerPillActive and not pos in u.game.eatenPowerPill:
-				u.game.eatenPowerPill.append(pos)
+				u.game.score += 50
+			else:
+				u.game.score += 10
 			putGame = True
+
+		if u.game.powerPillActive and not pos in u.game.eatenPowerPill:
+				u.game.eatenPowerPill.append(pos)
+
 		if putGame:
 			u.game.put()
-		message += ',"powerPillActive":'
+		message += ',"score":"%s","powerPillActive":' % u.game.score
 		if u.game.powerPillActive:
 			message += 'true,"powerPillStart":"%s"' % u.game.powerPillStartTime
 		else:
@@ -301,6 +307,18 @@ class MoveToHandler(webapp.RequestHandler):
 		for player in u.game.players:
 			if player != u.key():
 				channel.send_message(str(player.id()), message)
+
+class EatenHandler(webapp.RequestHandler):
+	def get(self):
+		user = GetSessionUser()
+		user.game.CheckPowerPill()
+		if user.role == "Pacman" and not user.game.powerPillActive:
+			
+			pass #end the game
+		elif user.game.powerPillActive:
+			user.game.numEaten += 1
+			user.game.score += 100 * user.game.numEaten
+			user.game.put()
 
 def main():
 	application = webapp.WSGIApplication([
@@ -314,6 +332,7 @@ def main():
 										('/leavegame', LeaveGameHandler),
 										('/updatesettings', UpdateSettingsHandler),
 										('/startgame', StartGameHandler),
+										('/eaten', EatenHandler),
 										('/moveto', MoveToHandler)],
 										 debug=True)
 	util.run_wsgi_app(application)

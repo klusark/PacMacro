@@ -31,12 +31,13 @@ function InGame() {
 
 	var powerPills = [19, 28, 51, 60];
 
-	var pos = -1;
-	var scoreBoard;
-	var startTime;
-	var powerPillActive = false;
-	var powerPillStart;
-	var localPlayerId;
+	var pos = -1,
+	scoreBoard,
+	startTime,
+	powerPillActive = false,
+	powerPillStart,
+	localPlayerId,
+	score;
 
 	this.Activate = function() {
 		channel.Connect(this);
@@ -134,6 +135,7 @@ function InGame() {
 			if (powerPillActive) {
 				powerPillStart = Date.parse(o.powerPillStart+" GMT");
 			}
+			score = o.score
 		} else if (o.type == "full") {
 			players = o.players;
 			tiles = o.tiles;
@@ -146,6 +148,8 @@ function InGame() {
 				this.MarkTile(players[i].pos, players[i].role);
 			}
 			localPlayerId = o.localPlayer;
+			score = o.score;
+			pos = players[localPlayerId].pos;
 			this.UpdateScoreBoard();
 		}
 		this.Draw();
@@ -175,7 +179,15 @@ function InGame() {
 			delta = 2*60 - Math.floor(delta/1000);
 			output += "Power Pill Time Left: "+ingame.FormattedMinutesSeconds(delta)+"<br \>";
 		}
+		output += "Score: "+score+"<br \>";
+		output += "<input type='submit' onclick='ingame.Eaten();' value='I was eaten'>";
 		scoreBoard.innerHTML = output;
+	};
+
+	this.Eaten = function() {
+		jx.load("eaten", function(data) {
+
+		});
 	};
 
 	this.onMessage = function(data) {
