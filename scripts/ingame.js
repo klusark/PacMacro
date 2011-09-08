@@ -122,6 +122,7 @@ function InGame() {
 	};
 
 	this.UpdateGame = function(data) {
+		console.log(data)
 		var o = JSON.parse(data);
 		if (o.type == "move") {
 			if (o.eat) {

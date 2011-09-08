@@ -37,14 +37,17 @@ class Game(db.Model):
 		time = datetime.utcnow()
 		delta = time - self.startTime
 		if delta.seconds > self.gameLength * 60 and not self.ended:
-			for player in self.players:
-				channel.send_message(str(player.id()), '{"type":"end"')
-			self.ended = True
-			self.put()
-			for player in self.players:
-				p = User.get(player)
-				p.game = None;
-				p.put()
+			self.EndGame()
+	
+	def EndGame(self):
+		for player in self.players:
+			channel.send_message(str(player.id()), '{"type":"end"}')
+		self.ended = True
+		self.put()
+		for player in self.players:
+			p = User.get(player)
+			p.game = None;
+			p.put()
 
 class User(db.Model):
 	username = db.StringProperty()
@@ -358,8 +361,7 @@ class EatenHandler(webapp.RequestHandler):
 		user = GetSessionUser()
 		user.game.CheckPowerPill()
 		if user.role == "Pacman" and not user.game.powerPillActive:
-
-			pass #end the game
+			user.game.EndGame()
 		elif user.game.powerPillActive and not user.dead:
 			user.game.numEaten += 1
 			user.game.score += 100 * user.game.numEaten
