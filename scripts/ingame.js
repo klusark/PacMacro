@@ -38,7 +38,8 @@ function InGame() {
 	powerPillStart,
 	localPlayerId,
 	score,
-	gameLength;
+	gameLength,
+	gameOver = false;
 
 	this.Activate = function() {
 		channel.Connect(this);
@@ -155,6 +156,8 @@ function InGame() {
 			gameLength = o.gamelength;
 			pos = players[localPlayerId].pos;
 			this.UpdateScoreBoard();
+		} else if (o.type == "end") {
+			menu.Activate();
 		}
 		this.Draw();
 	};
@@ -171,12 +174,20 @@ function InGame() {
 	};
 
 	this.UpdateScoreBoard = function() {
+		if (gameOver) {
+			return;
+		}
 		var output = "";
 		var time = new Date().getTime();
 		if (startTime) {
 			var delta = time - startTime;
 			delta = gameLength *60 - Math.floor(delta/1000);
-			output += "Time Left: "+ingame.FormattedMinutesSeconds(delta)+"<br \>";
+			if (delta < 0) {
+				output += "Game Over";
+			} else {
+				output += "Time Left: "+ingame.FormattedMinutesSeconds(delta)+"<br \>";
+			}
+			
 		}
 		if (powerPillActive) {
 			var delta = time - powerPillStart;
@@ -232,6 +243,10 @@ function InGame() {
 		}
 		for (var i = 0; i < players.length; i += 1) {
 			this.MarkTile(players[i].pos, players[i].role);
+		}
+		if (gameOver) {
+			context.font = "20pt";
+			context.fillText("Game Over", 0, 0);
 		}
 	};
 }

@@ -18,6 +18,13 @@ class Game(db.Model):
 	startTime = db.DateTimeProperty()
 	numEaten = db.IntegerProperty()
 	gameLength = db.IntegerProperty()
+	def CheckGame(self):
+		self.CheckPowerPill();
+		self.CheckGameEnd();
+		if self.ended:
+			return False
+		return True
+
 	def CheckPowerPill(self):
 		if self.powerPillActive:
 			time = datetime.utcnow()
@@ -25,12 +32,20 @@ class Game(db.Model):
 			if delta.seconds > 120:
 				self.powerPillActive = False
 				self.put()
+				
 	def CheckGameEnd(self):
 		time = datetime.utcnow()
-		delta = time - self.powerPillStartTime
-		if delta.seconds > self.gameLength*60:
+		delta = time - self.startTime
+		if delta.seconds > self.gameLength * 60 and not self.ended:
+			for player in self.players:
+				channel.send_message(str(player.id()), '{"type":"end"')
 			self.ended = True
 			self.put()
+			for player in self.players:
+				p = User.get(player)
+				p.game = None;
+				p.put()
+
 class User(db.Model):
 	username = db.StringProperty()
 	password = db.StringProperty()
@@ -205,7 +220,9 @@ class GameInfoHandler(webapp.RequestHandler):
 		if not user or not user.game:
 			return
 		if user.game.started:
-			user.game.CheckPowerPill()
+			good = user.game.CheckGame()
+			if not good:
+				return
 			response = '{"type":"full","gamelength":"%s","startTime":"%s","score":"%s","tiles":[' % (user.game.gameLength, user.game.startTime, user.game.score)
 			if user.role == "Pacman":
 				if user.game.eaten:
@@ -302,7 +319,9 @@ class MoveToHandler(webapp.RequestHandler):
 		u.pos = pos
 		u.put()
 		message = '{"type":"move","pos":"%s","name":"%s","role":"%s"' % (poss, user.username, u.role)
-		u.game.CheckPowerPill()
+		good = user.game.CheckGame()
+		if not good:
+			return
 		if u.role == "Pacman" and not pos in u.game.eaten:
 			u.game.eaten.append(pos)
 
