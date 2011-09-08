@@ -39,11 +39,13 @@ function InGame() {
 	localPlayerId,
 	score,
 	gameLength,
-	gameOver = false;
+	gameOver = false,
+	offsetX = 80,
+	offsetY = 80;
 
 	this.Activate = function() {
 		channel.Connect(this);
-		body.innerHTML = "<canvas id='canvas' width='512' height='548'></canvas><div id='scoreboard'></div>";
+		body.innerHTML = "<canvas id='canvas' width='620' height='620'></canvas><div id='scoreboard'></div>";
 		scoreBoard = document.getElementById('scoreboard');
 		canvas = document.getElementById('canvas');
 		context = canvas.getContext('2d');
@@ -63,8 +65,8 @@ function InGame() {
 	this.OnClick = function(e) {
 		var x = e.offsetX;
 		var y = e.offsetY;
-		x = Math.floor((x-10)/16);
-		y = Math.floor((y-10)/16);
+		x = Math.floor((x-offsetX)/16);
+		y = Math.floor((y-offsetY)/16);
 		var tile = -1;
 		if ((x%2 == 0 && y%2 == 0)){
 			if (y%8 == 0) {
@@ -88,13 +90,13 @@ function InGame() {
 		var y = 0;
 		if (tile < 80) {
 			x = tile%16;
-			y = ((tile-x)/16)*128+10;
-			x = (x * 32) + 10;
+			y = ((tile-x)/16)*128+offsetY;
+			x = (x * 32) + offsetX;
 		} else {
 			tile -= 80;
 			y = tile%12;
-			x = ((tile-y)/12)*96+10;
-			y = (y + Math.floor(y/3)+1)*32+10;
+			x = ((tile-y)/12)*96+offsetX;
+			y = (y + Math.floor(y/3)+1)*32+offsetY;
 		}
 		var o = {};
 		o.x = x;
@@ -215,15 +217,16 @@ function InGame() {
 	};
 
 	this.Draw = function() {
+		
 		context.fillStyle = "rgb(0, 0, 0)";
-		context.fillRect(0, 0, 548, 548);
+		context.fillRect(0, 0, 650, 650);
 		context.fillStyle = "rgb(0, 0, 128)";
 
 		for (var i = 0; i < 6; i += 1) {
-			context.fillRect(10+96*i, 10, 16, 528);
+			context.fillRect(offsetX+96*i, offsetX, 16, 528);
 		}
 		for (var i = 0; i < 5; i += 1) {
-			context.fillRect(10, 10+128*i, 480, 16);
+			context.fillRect(offsetX, offsetX+128*i, 480, 16);
 		}
 
 		context.fillStyle = "rgb(255,255,255)";
@@ -245,10 +248,19 @@ function InGame() {
 		for (var i = 0; i < players.length; i += 1) {
 			this.MarkTile(players[i].pos, players[i].role);
 		}
-		if (gameOver) {
-			context.font = "20pt";
-			context.fillText("Game Over", 0, 0);
-		}
+		context.font = "20px sans-serif";
+		context.fillStyle = "rgb(255,255,255)";
+		context.fillText("A", 80, 70);
+		context.fillText("B", 176, 70);
+		context.fillText("C", 272, 70);
+		context.fillText("D", 368, 70);
+		context.fillText("E", 464, 70);
+		context.fillText("F", 560, 70);
+		context.fillText("1", 60, 95);
+		context.fillText("2", 60, 223);
+		context.fillText("3", 60, 351);
+		context.fillText("4", 60, 479);
+		context.fillText("5", 60, 607);
 	};
 }
 
