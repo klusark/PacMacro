@@ -45,6 +45,31 @@ def GetSessionUser():
 	session.regenerate_id()
 	return user
 
+class LogoutHandler(webapp.RequestHandler):
+	def get(self):
+		session = get_current_session()
+		session.terminate()
+		self.response.out.write(GetLoginStatus(None))
+	
+def GetLoginStatus(user):
+	response = '{"loggedin":'
+	if user:
+		response += 'true,"ingame":'
+		#TODO: Check if the game is actually valid as it will crash if it is not.
+		if user and user.game:
+			response += 'true,"started":'
+			if user.game.started:
+				response += "true"
+			else:
+				response += "false"
+		else:
+			response += "false"
+
+	else:
+		response += 'false'
+	response += "}"
+	return response
+
 class LoginHandler(webapp.RequestHandler):
 	def get(self):
 		user = GetSessionUser()
@@ -61,24 +86,9 @@ class LoginHandler(webapp.RequestHandler):
 			u = users[0]
 			session = get_current_session()
 			session.set_quick("key", u.key())
+			user = u
 
-		response = '{"loggedin":'
-		if user:
-			response += 'true,"ingame":'
-			#TODO: Check if the game is actually valid as it will crash if it is not.
-			if user and user.game:
-				response += 'true,"started":'
-				if user.game.started:
-					response += "true"
-				else:
-					response += "false"
-			else:
-				response += "false"
-
-		else:
-			response += 'false'
-		response += "}"
-		self.response.out.write(response)
+		self.response.out.write(GetLoginStatus(user))
 
 class SignupHandler(webapp.RequestHandler):
 	def get(self):
@@ -97,6 +107,7 @@ class SignupHandler(webapp.RequestHandler):
 		u.put()
 		session = get_current_session()
 		session.set_quick("key", u.key())
+		self.response.out.write(GetLoginStatus(u))
 
 class ConnectHandler(webapp.RequestHandler):
 	def get(self):
@@ -330,6 +341,7 @@ class EatenHandler(webapp.RequestHandler):
 def main():
 	application = webapp.WSGIApplication([
 										('/login', LoginHandler),
+										('/logout', LogoutHandler),
 										('/signup', SignupHandler),
 										('/connect', ConnectHandler),
 										('/creategame', CreateGameHandler),
