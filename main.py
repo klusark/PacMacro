@@ -1,8 +1,8 @@
 from google.appengine.api import channel
 from gaesessions import get_current_session
-from google.appengine.ext import db, webapp
-from google.appengine.ext.webapp import util
+from google.appengine.ext import db
 from datetime import datetime
+import webapp2
 
 class Game(db.Model):
 	name = db.StringProperty(required=True)
@@ -69,7 +69,7 @@ def GetSessionUser():
 	session.regenerate_id()
 	return user
 
-class LogoutHandler(webapp.RequestHandler):
+class LogoutHandler(webapp2.RequestHandler):
 	def get(self):
 		session = get_current_session()
 		session.terminate()
@@ -94,7 +94,7 @@ def GetLoginStatus(user):
 	response += "}"
 	return response
 
-class LoginHandler(webapp.RequestHandler):
+class LoginHandler(webapp2.RequestHandler):
 	def get(self):
 		user = GetSessionUser()
 		uname = self.request.get("user")
@@ -114,7 +114,7 @@ class LoginHandler(webapp.RequestHandler):
 
 		self.response.out.write(GetLoginStatus(user))
 
-class SignupHandler(webapp.RequestHandler):
+class SignupHandler(webapp2.RequestHandler):
 	def get(self):
 		uname = self.request.get("user")
 		upass = self.request.get("pass")
@@ -133,7 +133,7 @@ class SignupHandler(webapp.RequestHandler):
 		session.set_quick("key", u.key())
 		self.response.out.write(GetLoginStatus(u))
 
-class ConnectHandler(webapp.RequestHandler):
+class ConnectHandler(webapp2.RequestHandler):
 	def get(self):
 		session = get_current_session()
 		key = session.get("key")
@@ -141,7 +141,7 @@ class ConnectHandler(webapp.RequestHandler):
 		token = channel.create_channel(str(key.id()))
 		self.response.out.write(token)
 
-class CreateGameHandler(webapp.RequestHandler):
+class CreateGameHandler(webapp2.RequestHandler):
 	def get(self):
 		user = GetSessionUser()
 		q = Game.all()
@@ -158,7 +158,7 @@ class CreateGameHandler(webapp.RequestHandler):
 			user.game = game
 			user.put()
 
-class GetGameListHandler(webapp.RequestHandler):
+class GetGameListHandler(webapp2.RequestHandler):
 	def get(self):
 		q = Game.all()
 		games = q.fetch(10)
@@ -174,7 +174,7 @@ class GetGameListHandler(webapp.RequestHandler):
 		response += "]}"
 		self.response.out.write(response)
 
-class JoinGameHandler(webapp.RequestHandler):
+class JoinGameHandler(webapp2.RequestHandler):
 	def get(self):
 		user = GetSessionUser()
 		q = Game.all()
@@ -197,7 +197,7 @@ class JoinGameHandler(webapp.RequestHandler):
 			response = '{"error":"game not found"}'
 		self.response.out.write(response)
 
-class LeaveGameHandler(webapp.RequestHandler):
+class LeaveGameHandler(webapp2.RequestHandler):
 	def get(self):
 		user = GetSessionUser()
 		if not user or user.game.started:
@@ -217,7 +217,7 @@ class LeaveGameHandler(webapp.RequestHandler):
 		user.game = None
 		user.put()
 
-class GameInfoHandler(webapp.RequestHandler):
+class GameInfoHandler(webapp2.RequestHandler):
 	def get(self):
 		user = GetSessionUser()
 		if not user or not user.game:
@@ -266,7 +266,7 @@ class GameInfoHandler(webapp.RequestHandler):
 		response += '],"localPlayer":"%s"}' % localPlayer
 		self.response.out.write(response)
 
-class UpdateSettingsHandler(webapp.RequestHandler):
+class UpdateSettingsHandler(webapp2.RequestHandler):
 	def get(self):
 		user = GetSessionUser()
 		role = self.request.get("role")
@@ -288,7 +288,7 @@ class UpdateSettingsHandler(webapp.RequestHandler):
 			for player in user.game.players:
 				channel.send_message(str(player.id()), '{"type":"length","length":"%s"}' % gameLength)
 
-class StartGameHandler(webapp.RequestHandler):
+class StartGameHandler(webapp2.RequestHandler):
 	def get(self):
 		user = GetSessionUser()
 		if not user:
@@ -308,7 +308,7 @@ class StartGameHandler(webapp.RequestHandler):
 			p.put()
 			channel.send_message(str(player.id()), '{"type":"startgame"}')
 
-class MoveToHandler(webapp.RequestHandler):
+class MoveToHandler(webapp2.RequestHandler):
 	def get(self):
 		user = GetSessionUser()
 		if not user:
@@ -356,7 +356,7 @@ class MoveToHandler(webapp.RequestHandler):
 			if player != u.key():
 				channel.send_message(str(player.id()), message)
 
-class EatenHandler(webapp.RequestHandler):
+class EatenHandler(webapp2.RequestHandler):
 	def get(self):
 		user = GetSessionUser()
 		user.game.CheckPowerPill()
@@ -372,7 +372,7 @@ class EatenHandler(webapp.RequestHandler):
 		for player in user.game.players:
 			channel.send_message(str(player.id()), message)
 
-class ScoreboardHandler(webapp.RequestHandler):
+class ScoreboardHandler(webapp2.RequestHandler):
 	def get(self):
 		q = Game.all()
 		games = q.fetch(10)
@@ -388,26 +388,20 @@ class ScoreboardHandler(webapp.RequestHandler):
 		response += "]}"
 		self.response.out.write(response)
 
-def main():
-	application = webapp.WSGIApplication([
-										('/login', LoginHandler),
-										('/logout', LogoutHandler),
-										('/signup', SignupHandler),
-										('/connect', ConnectHandler),
-										('/creategame', CreateGameHandler),
-										('/getgamelist', GetGameListHandler),
-										('/joingame', JoinGameHandler),
-										('/getgameinfo', GameInfoHandler),
-										('/leavegame', LeaveGameHandler),
-										('/updatesettings', UpdateSettingsHandler),
-										('/startgame', StartGameHandler),
-										('/eaten', EatenHandler),
-										('/scoreboard', ScoreboardHandler),
-										('/moveto', MoveToHandler)],
-										 debug=True)
-	util.run_wsgi_app(application)
 
-
-if __name__ == '__main__':
-	main()
-
+app = webapp2.WSGIApplication([
+								('/login', LoginHandler),
+								('/logout', LogoutHandler),
+								('/signup', SignupHandler),
+								('/connect', ConnectHandler),
+								('/creategame', CreateGameHandler),
+								('/getgamelist', GetGameListHandler),
+								('/joingame', JoinGameHandler),
+								('/getgameinfo', GameInfoHandler),
+								('/leavegame', LeaveGameHandler),
+								('/updatesettings', UpdateSettingsHandler),
+								('/startgame', StartGameHandler),
+								('/eaten', EatenHandler),
+								('/scoreboard', ScoreboardHandler),
+								('/moveto', MoveToHandler)],
+								 debug=True)

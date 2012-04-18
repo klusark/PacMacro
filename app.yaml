@@ -1,7 +1,11 @@
 application: pacmacro
-version: 3
-runtime: python
+version: 4
+runtime: python27
 api_version: 1
+threadsafe: true
+
+inbound_services:
+- channel_presence
 
 handlers:
 - url: /scripts
@@ -12,5 +16,5 @@ handlers:
   static_files: index.html
   upload: index.html
 - url: .*
-  script: main.py
+  script: main.app
 
