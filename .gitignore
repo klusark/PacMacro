@@ -1,2 +1,7 @@
 *.pyc
 index.yaml
+*.suo
+*.sdf
+*.opensdf
+Release
+Debug
