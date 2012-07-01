@@ -2,6 +2,7 @@
 
 #include <string>
 #include "Player.hpp"
+#include <Poco/Mutex.h>
 
 class Game {
 public:
@@ -19,6 +20,7 @@ private:
 	Player _players[5];
 	int _score;
 
+	Poco::FastMutex mutex;
 };
 
 extern Game *g_game;

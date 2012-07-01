@@ -19,14 +19,18 @@ Game::Game() {
 }
 
 void Game::addConnection(PlayerType id, Connection *connection) {
+	Poco::FastMutex::ScopedLock lock(mutex);
 	_players[id].addConnection(connection);
 }
 
 void Game::removeConnection(PlayerType id, Connection *connection) {
+	Poco::FastMutex::ScopedLock lock(mutex);
 	_players[id].removeConnection(connection);
 }
 
 std::string Game::getGameState(PlayerType id) {
+	Poco::FastMutex::ScopedLock lock(mutex);
+
 	std::stringstream ss;
 	ss << "{\"type\":\"full\",\"gamelength\":" << _gameLength << ",\"startTime\":" << _startTime 
 	   << ",\"score\":" << _score << ",\"tiles\":[";
@@ -62,6 +66,8 @@ std::string Game::getGameState(PlayerType id) {
 }
 
 void Game::moveTo(PlayerType id, int pos) {
+	Poco::FastMutex::ScopedLock lock(mutex);
+
 	std::stringstream ss;
 	if (id == Pacman) {
 		if (_tiles[pos] == false) {

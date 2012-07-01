@@ -10,7 +10,6 @@
 #include "Poco/Net/NetException.h"
 #include "Poco/Util/ServerApplication.h"
 
-
 #include "Player.hpp"
 #include "Game.hpp"
 #include "Connection.hpp"
@@ -71,6 +70,5 @@ protected:
 	}
 
 };
-
 
 POCO_SERVER_MAIN(WebSocketServer)

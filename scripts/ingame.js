@@ -5,7 +5,7 @@ window.onload = function() {
 	"use strict";
 	var role = window.location.hash.substring(1);
 	var ingame = new InGame(role);
-	websocket = new WebSocket("ws://127.0.0.1:37645");
+	websocket = new WebSocket("ws://home.teichroeb.net:37645");
 	websocket.onopen = function () { websocket.send("login;" + role); };
 	websocket.onmessage = function(data) { ingame.UpdateGame(data.data); };
 };
@@ -15,7 +15,7 @@ window.onload = function() {
  */
 function StaticImage(img, x, y, w, h, ox, oy) {
 	"use strict";
-	this.Draw = function(dx, dy, ctx) {
+	this.draw = function(dx, dy, ctx) {
 		ctx.drawImage(img, x, y, w, h, Math.floor(dx) + ox, Math.floor(dy) + oy, w, h);
 	};
 }
@@ -56,7 +56,7 @@ function InGame(role) {
 	images.PowerPill = new StaticImage(image, 0, 40, 16, 8, 0, 4);
 	images.PowerPillEat = new StaticImage(image, 31, 40, 16, 8, 0, 4);
 
-	function FormattedMinutesSeconds(time) {
+	function formattedMinutesSeconds(time) {
 		var seconds = time % 60,
 			output = Math.floor(time / 60) + ":";
 		if (seconds < 10) {
@@ -66,7 +66,7 @@ function InGame(role) {
 		return output;
 	}
 
-	function TileToXY(tile) {
+	function tileToXY(tile) {
 		var x = 0, y = 0;
 		if (tile < 80) {
 			x = tile % 16;
@@ -81,7 +81,7 @@ function InGame(role) {
 		return {x : x, y : y};
 	}
 
-	function XYToTile(x, y) {
+	function xyToTile(x, y) {
 		var tile = -1;
 		x -= offset;
 		y -= offset;
@@ -97,9 +97,9 @@ function InGame(role) {
 		return tile;
 	}
 
-	function IsBeside(a, b) {
-		var oa = TileToXY(a),
-			ob = TileToXY(b);
+	function isBeside(a, b) {
+		var oa = tileToXY(a),
+			ob = tileToXY(b);
 		if ((oa.x === ob.x && (oa.y + 32 === ob.y || oa.y - 32 === ob.y)) || (oa.y === ob.y && (oa.x + 32 === ob.x || oa.x - 32 === ob.x))) {
 			return true;
 		}
@@ -110,53 +110,52 @@ function InGame(role) {
 		activated = true;
 		var canvas = document.getElementById('canvas');
 		context = canvas.getContext('2d');
-		canvas.addEventListener("click", this.OnClick, false);
-		canvas.addEventListener("keydown", this.KeyDown, false);
-		window.onkeydown = this.KeyDown;
-		setInterval(this.UpdateScoreBoard, 300);
+		canvas.addEventListener("click", onClick, false);
+		window.onkeydown = keyDown;
+		setInterval(updateScoreBoard, 300);
 	};
 
-	this.OnClick = function(e) {
-		MoveTo(e.offsetX, e.offsetY);
-	};
+	function onClick(e) {
+		moveTo(e.offsetX, e.offsetY);
+	}
 	
-	function MoveTo(x, y) {
-		var tile = XYToTile(x, y);
+	function moveTo(x, y) {
+		var tile = xyToTile(x, y);
 		if (tile === -1) {
 			return;
 		}
 
-		if (pos === -1 || IsBeside(tile, pos)) {
+		if (pos === -1 || isBeside(tile, pos)) {
 			pos = tile;
 			websocket.send("moveto;" + tile);
 		}
 	}
 	
-	this.KeyDown = function(e) {
-		var o = TileToXY(pos);
-		if (e.keyCode == 87 || e.keyCode == 38) {
+	function keyDown(e) {
+		var o = tileToXY(pos);
+		if (e.keyCode === 87 || e.keyCode === 38) {
 			o.y -= 32;
 			//w
-		} else if (e.keyCode == 65 || e.keyCode == 37) {
+		} else if (e.keyCode === 65 || e.keyCode === 37) {
 			o.x -= 32;
 			//a
-		} else if (e.keyCode == 83 || e.keyCode == 40) {
+		} else if (e.keyCode === 83 || e.keyCode === 40) {
 			o.y += 32;
 			//s
-		} else if (e.keyCode == 68 || e.keyCode == 39) {
+		} else if (e.keyCode === 68 || e.keyCode === 39) {
 			o.x += 32;
 			//d
 		} else {
 			return true;
 		}
-		MoveTo(o.x, o.y);
+		moveTo(o.x, o.y);
 		return false;
-	};
+	}
 
-	this.MarkTile = function(tile, image) {
-		var o = TileToXY(tile);
-		image.Draw(o.x, o.y, context);
-	};
+	function markTile(tile, image) {
+		var o = tileToXY(tile);
+		image.draw(o.x, o.y, context);
+	}
 
 	this.UpdateGame = function(data) {
 		console.log(data);
@@ -166,12 +165,12 @@ function InGame(role) {
 		var o = JSON.parse(data), i;
 		if (o["type"] === "move") {
 			if (o["role"] === role) {
-				pos = o["pos"]
+				pos = o["pos"];
 			}
 			if (o["role"] === "Pacman") {
 				tiles.push(o["pos"]);
 			}
-			this.MarkTile(o["pos"], images[o["role"]]);
+			markTile(o["pos"], images[o["role"]]);
 			for (i = 0; i < players.length; i += 1) {
 				if (players[i]["role"] === o["role"]) {
 					players[i]["pos"] = o["pos"];
@@ -191,7 +190,7 @@ function InGame(role) {
 				powerPillStart = o["powerPillStart"];
 			}
 			for (i = 0; i < players.length; i += 1) {
-				this.MarkTile(players[i]["pos"], images[players[i]["role"]]);
+				markTile(players[i]["pos"], images[players[i]["role"]]);
 			}
 			score = o["score"];
 			gameLength = o["gamelength"];
@@ -201,12 +200,12 @@ function InGame(role) {
 				}
 			}
 
-			this.UpdateScoreBoard();
+			updateScoreBoard();
 		}
-		this.Draw();
+		draw();
 	};
 
-	this.UpdateScoreBoard = function() {
+	function updateScoreBoard() {
 		if (gameOver) {
 			return;
 		}
@@ -221,7 +220,7 @@ function InGame(role) {
 		if (delta < 0) {
 			timetext = "Game Over";
 		} else {
-			timetext = "Time Left: " + FormattedMinutesSeconds(delta);
+			timetext = "Time Left: " + formattedMinutesSeconds(delta);
 		}
 		context.fillText(timetext, 150, 20);
 		
@@ -230,12 +229,12 @@ function InGame(role) {
 			if (delta < 0) {
 				powerPillActive = false;
 			} else {
-				context.fillText("Power Pill Time Left: " + FormattedMinutesSeconds(delta), 300, 20);
+				context.fillText("Power Pill Time Left: " + formattedMinutesSeconds(delta), 300, 20);
 			}
 		}
-	};
+	}
 
-	this.Draw = function() {
+	function draw() {
 		var i;
 		context.fillStyle = backgroundColour;
 		context.fillRect(0, 0, 650, 650);
@@ -251,21 +250,21 @@ function InGame(role) {
 		context.fillStyle = foregroundColour;
 		for (i = 0; i < 152; i += 1) {
 			if (powerPills.indexOf(i) !== -1) {
-				this.MarkTile(i, images.PowerPill);
+				markTile(i, images.PowerPill);
 			} else {
-				this.MarkTile(i, images.Pill);
+				markTile(i, images.Pill);
 			}
 		}
 		for (i = 0; i < tiles.length; i += 1) {
 			var x = parseInt(tiles[i], 10);
 			if (powerPills.indexOf(x) !== -1) {
-				this.MarkTile(x, images.PowerPillEat);
+				markTile(x, images.PowerPillEat);
 			} else {
-				this.MarkTile(x, images.Eat);
+				markTile(x, images.Eat);
 			}
 		}
 		for (i = 0; i < players.length; i += 1) {
-			this.MarkTile(players[i]["pos"], images[players[i]["role"]]);
+			markTile(players[i]["pos"], images[players[i]["role"]]);
 		}
 		context.font = "20px sans-serif";
 		context.fillStyle = foregroundColour;
@@ -282,6 +281,6 @@ function InGame(role) {
 		context.fillText("5", 60, 607);
 
 		context.fillText("Score: " + score, 10, 20);
-		this.UpdateScoreBoard();
-	};
+		updateScoreBoard();
+	}
 }
