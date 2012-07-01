@@ -17,6 +17,8 @@ void Connection::run() {
 			length = _ws->receiveFrame(buff, 1024, _flags);
 		} catch (Poco::TimeoutException &) {
 			continue;
+		} catch (std::exception &) {
+			break;
 		}
 		if (length == 0) {
 			break;
@@ -27,21 +29,21 @@ void Connection::run() {
 			break;
 		}
 		if (token[0] == "login") {
-			if (token[1] == "pacman") {
+			if (token[1] == "Pacman") {
 				_type = Pacman;
-			} else if (token[1] == "inky") {
+			} else if (token[1] == "Inky") {
 				_type = Inky;
-			} else if (token[1] == "blinky") {
+			} else if (token[1] == "Blinky") {
 				_type = Blinky;
-			} else if (token[1] == "pinky") {
+			} else if (token[1] == "Pinky") {
 				_type = Pinky;
-			} else if (token[1] == "clyde") {
+			} else if (token[1] == "Clyde") {
 				_type = Clyde;
 			} else {
 				break;
 			}
 			g_game->addConnection(_type, this);
-			send(g_game->getGameState());
+			send(g_game->getGameState(_type));
 		} else if (token[0] == "moveto") {
 			int pos = atoi(token[1].c_str());
 			g_game->moveTo(_type, pos);
