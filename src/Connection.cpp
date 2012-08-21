@@ -47,6 +47,9 @@ void Connection::run() {
 		} else if (token[0] == "moveto") {
 			int pos = atoi(token[1].c_str());
 			g_game->moveTo(_type, pos);
+		} else if (token[0] == "power" && _type == Pacman) {
+			int pos = atoi(token[1].c_str());
+			g_game->power(pos);
 		}
 	}
 	if (_type != InvalidType) {

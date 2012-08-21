@@ -5,7 +5,7 @@ window.onload = function() {
 	"use strict";
 	var role = window.location.hash.substring(1);
 	var ingame = new InGame(role);
-	websocket = new WebSocket("ws://home.teichroeb.net:37645");
+	websocket = new WebSocket("ws://24.85.76.189:37645");
 	websocket.onopen = function () { websocket.send("login;" + role); };
 	websocket.onmessage = function(data) { ingame.UpdateGame(data.data); };
 };
@@ -105,20 +105,28 @@ function InGame(role) {
 		}
 		return false;
 	}
-	
+
+	function isPowerpill(pos) {
+		return (powerPills.indexOf(pos) !== -1 && tiles.indexOf(pos) === -1);
+	}
+
 	this.Activate = function() {
 		activated = true;
 		var canvas = document.getElementById('canvas');
 		context = canvas.getContext('2d');
 		canvas.addEventListener("click", onClick, false);
 		window.onkeydown = keyDown;
-		setInterval(updateScoreBoard, 300);
+		setInterval(updateScoreBoard, 100);
 	};
 
 	function onClick(e) {
-		moveTo(e.offsetX, e.offsetY);
+		if (e.offsetY < 40 && e.offsetX > 490 && isPowerpill(pos)) {
+			eatPowerpill(pos);
+		} else {
+			moveTo(e.offsetX, e.offsetY);
+		}
 	}
-	
+
 	function moveTo(x, y) {
 		var tile = xyToTile(x, y);
 		if (tile === -1) {
@@ -130,7 +138,13 @@ function InGame(role) {
 			websocket.send("moveto;" + tile);
 		}
 	}
-	
+
+	function eatPowerpill(pos) {
+		if (role === "Pacman" && isPowerpill(pos)) {
+			websocket.send("power;" + pos);
+		}
+	}
+
 	function keyDown(e) {
 		var o = tileToXY(pos);
 		if (e.keyCode === 87 || e.keyCode === 38) {
@@ -153,6 +167,9 @@ function InGame(role) {
 	}
 
 	function markTile(tile, image) {
+		if (tile < 0 || tile > 152) {
+			return;
+		}
 		var o = tileToXY(tile);
 		image.draw(o.x, o.y, context);
 	}
@@ -167,7 +184,7 @@ function InGame(role) {
 			if (o["role"] === role) {
 				pos = o["pos"];
 			}
-			if (o["role"] === "Pacman") {
+			if (o["role"] === "Pacman" && !isPowerpill(o["pos"])) {
 				tiles.push(o["pos"]);
 			}
 			markTile(o["pos"], images[o["role"]]);
@@ -175,10 +192,6 @@ function InGame(role) {
 				if (players[i]["role"] === o["role"]) {
 					players[i]["pos"] = o["pos"];
 				}
-			}
-			powerPillActive = o["powerPillActive"];
-			if (powerPillActive) {
-				powerPillStart = o["powerPillStart"];
 			}
 			score = o["score"];
 		} else if (o["type"] === "full") {
@@ -201,6 +214,18 @@ function InGame(role) {
 			}
 
 			updateScoreBoard();
+		} else if (o["type"] === "score") {
+			score = o["score"];
+		} else if (o["type"] === "power") {
+			tiles.push(o["pos"]);
+			score = o["score"];
+			powerPillActive = true;
+			powerPillStart = o["time"];
+			for (i = 0; i < players.length; i += 1) {
+				if (players[i]["role"] === "Pacman") {
+					players[i]["pos"] = o["pos"];
+				}
+			}
 		}
 		draw();
 	};
@@ -212,7 +237,12 @@ function InGame(role) {
 		var time = new Date().getTime(), timetext, delta;
 
 		context.fillStyle = backgroundColour;
-		context.fillRect(150, 0, 400, 50);
+		if (!powerPillActive) {
+			context.fillRect(150, 0, 300, 50);
+		} else {
+			context.fillRect(150, 0, 400, 50);
+		}
+
 
 		context.fillStyle = foregroundColour;
 		delta = 60 * gameLength - ((time / 1000) - startTime);
@@ -223,9 +253,10 @@ function InGame(role) {
 			timetext = "Time Left: " + formattedMinutesSeconds(delta);
 		}
 		context.fillText(timetext, 150, 20);
-		
+
 		if (powerPillActive) {
 			delta = 120 - ((time / 1000) - powerPillStart);
+			delta = Math.floor(delta);
 			if (delta < 0) {
 				powerPillActive = false;
 			} else {
@@ -282,5 +313,10 @@ function InGame(role) {
 
 		context.fillText("Score: " + score, 10, 20);
 		updateScoreBoard();
+
+
+		if (isPowerpill(pos)) {
+			context.fillText("Activate!", 490, 20);
+		}
 	}
 }
