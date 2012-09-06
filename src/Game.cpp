@@ -45,8 +45,10 @@ std::string Game::getGameState(PlayerType id) {
 
 	checkTimes();
 
+	int t = (int)time(nullptr);
+
 	std::stringstream ss;
-	ss << "{\"type\":\"full\",\"gamelength\":" << _gameLength << ",\"startTime\":" << _startTime 
+	ss << "{\"type\":\"full\",\"gamelength\":" << _gameLength << ",\"timeLeft\":" << (_startTime + 30*60) - t
 	   << ",\"score\":" << _score << ",\"tiles\":[";
 	bool first = true;
 	bool *tiles = nullptr;
@@ -67,7 +69,7 @@ std::string Game::getGameState(PlayerType id) {
 	ss << "],\"powerPillActive\":" << _powerPillActive << "";
 
 	if (_powerPillActive) {
-		ss << ",\"powerPillStart\":\"" << _pillTime << "\"";
+		ss << ",\"powerPillLeft\":\"" << (_pillTime + 120) - t << "\"";
 	}
 	ss << ",\"players\":[";
 	first = true;
