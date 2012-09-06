@@ -5,7 +5,7 @@ window.onload = function() {
 	"use strict";
 	var role = window.location.hash.substring(1);
 	var ingame = new InGame(role);
-	websocket = new WebSocket("ws://24.85.76.189:37645");
+	websocket = new WebSocket("ws://csss.cs.sfu.ca:37645");
 	websocket.onopen = function () { websocket.send("login;" + role); };
 	websocket.onmessage = function(data) { ingame.UpdateGame(data.data); };
 };
@@ -42,6 +42,7 @@ function InGame(role) {
 		gameOver = false,
 		activated = false,
 		backgroundColour = "rgb(0,0,0)",
+		backgroundPill = "rgb(255,0,0)",
 		lineColour = "rgb(0,0,128)",
 		foregroundColour = "rgb(255,255,255)";
 
@@ -197,10 +198,11 @@ function InGame(role) {
 		} else if (o["type"] === "full") {
 			players = o["players"];
 			tiles = o["tiles"];
-			startTime = o["startTime"];
+			var t = new Date().getTime() / 1000;
+			startTime = t-((30*60) - o["timeLeft"]);
 			powerPillActive = o["powerPillActive"];
 			if (powerPillActive) {
-				powerPillStart = o["powerPillStart"];
+				powerPillStart = t-(120 - o["powerPillLeft"]);
 			}
 			for (i = 0; i < players.length; i += 1) {
 				markTile(players[i]["pos"], images[players[i]["role"]]);
@@ -220,7 +222,7 @@ function InGame(role) {
 			tiles.push(o["pos"]);
 			score = o["score"];
 			powerPillActive = true;
-			powerPillStart = o["time"];
+			powerPillStart = new Date().getTime() / 1000;
 			for (i = 0; i < players.length; i += 1) {
 				if (players[i]["role"] === "Pacman") {
 					players[i]["pos"] = o["pos"];
@@ -236,10 +238,11 @@ function InGame(role) {
 		}
 		var time = new Date().getTime(), timetext, delta;
 
-		context.fillStyle = backgroundColour;
 		if (!powerPillActive) {
+			context.fillStyle = backgroundColour;
 			context.fillRect(150, 0, 300, 50);
 		} else {
+			context.fillStyle = backgroundPill;
 			context.fillRect(150, 0, 400, 50);
 		}
 
@@ -259,6 +262,7 @@ function InGame(role) {
 			delta = Math.floor(delta);
 			if (delta < 0) {
 				powerPillActive = false;
+				draw();
 			} else {
 				context.fillText("Power Pill Time Left: " + formattedMinutesSeconds(delta), 300, 20);
 			}
@@ -267,7 +271,11 @@ function InGame(role) {
 
 	function draw() {
 		var i;
-		context.fillStyle = backgroundColour;
+		if (powerPillActive) {
+			context.fillStyle = backgroundPill;
+		} else {
+			context.fillStyle = backgroundColour;
+		}
 		context.fillRect(0, 0, 650, 650);
 		context.fillStyle = lineColour;
 
@@ -315,8 +323,9 @@ function InGame(role) {
 		updateScoreBoard();
 
 
-		if (isPowerpill(pos)) {
+		if (isPowerpill(pos) && role === "Pacman") {
 			context.fillText("Activate!", 490, 20);
 		}
 	}
 }
+
